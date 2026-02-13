@@ -196,12 +196,21 @@ with st.expander("🗑️ حذف أعمدة متعددة"):
         st.session_state.df.drop(columns=cols, inplace=True)
         st.rerun()
 
-# حذف عمود واحد
-with st.expander("🚫 حذف عمود كامل"):
-    drop_col = st.selectbox("اختر العمود المراد حذفه", df.columns, key="drop_single")
-    if st.button("تنفيذ حذف العمود"):
+# حذف صف برقم الصف
+with st.expander("🧹 حذف صف برقم الصف"):
+    st.write("اكتب رقم الصف كما يظهر في الجدول (يبدأ من 1)")
+
+    row_number = st.number_input(
+        "رقم الصف",
+        min_value=1,
+        max_value=len(df),
+        step=1
+    )
+
+    if st.button("تنفيذ حذف الصف"):
         save_history()
-        st.session_state.df.drop(columns=[drop_col], inplace=True)
+        index_to_drop = row_number - 1
+        st.session_state.df = df.drop(df.index[index_to_drop])
         st.rerun()
 
 # استبدال القيم
