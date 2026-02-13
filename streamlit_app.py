@@ -172,22 +172,15 @@ if search:
 st.dataframe(view_df, use_container_width=True, hide_index=True)
 
 # ======================================================
-# أزرار تحت الجدول
+# زر التراجع تحت الجدول (في المنتصف)
 # ======================================================
-u1, u2, u3 = st.columns([1,1,1])
+col_left, col_mid, col_right = st.columns([2,1,2])
 
-with u1:
+with col_mid:
     if st.button("↩️ تراجع"):
         if len(st.session_state.history) > 0:
             st.session_state.df = st.session_state.history.pop()
             st.rerun()
-
-with u2:
-    if st.button("🔄 ملف جديد"):
-        st.session_state.df = None
-        st.session_state.last_file = None
-        st.session_state.history = []
-        st.rerun()
 
 st.divider()
 
@@ -195,24 +188,23 @@ st.divider()
 # الأدوات
 # ======================================================
 
-# حذف أعمدة
-with st.expander("🗑️ حذف أعمدة"):
+# حذف عدة أعمدة
+with st.expander("🗑️ حذف أعمدة متعددة"):
     cols = st.multiselect("اختر الأعمدة", df.columns)
     if st.button("تنفيذ حذف الأعمدة"):
         save_history()
         st.session_state.df.drop(columns=cols, inplace=True)
         st.rerun()
 
-# حذف صفوف حسب قيمة
-with st.expander("🧹 حذف صفوف حسب قيمة"):
-    col = st.selectbox("اختر العمود", df.columns)
-    val = st.text_input("القيمة")
-    if st.button("تنفيذ حذف الصفوف"):
+# حذف عمود واحد
+with st.expander("🚫 حذف عمود كامل"):
+    drop_col = st.selectbox("اختر العمود المراد حذفه", df.columns, key="drop_single")
+    if st.button("تنفيذ حذف العمود"):
         save_history()
-        st.session_state.df = df[df[col].astype(str) != val]
+        st.session_state.df.drop(columns=[drop_col], inplace=True)
         st.rerun()
 
-# استبدال
+# استبدال القيم
 with st.expander("🔁 استبدال نص أو رقم"):
     rcol = st.selectbox("العمود", df.columns, key="rep")
     old = st.text_input("القيمة القديمة")
