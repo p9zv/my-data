@@ -3,191 +3,199 @@ import pandas as pd
 import io
 import streamlit.components.v1 as components
 
-# 1. إعدادات الصفحة الأساسية
-st.set_page_config(page_title="محلل ملفات Excel المتقدم", layout="wide")
+# ============ إعداد الصفحة ============
+st.set_page_config(page_title="PRO DATA ANALYZER", page_icon="💎", layout="wide")
 
-# 2. بناء التصميم (CSS) ليكون مطابقاً للصورة 100%
+# تحميل FontAwesome داخل DOM الحقيقي (مهم جداً)
+components.html("""
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+""", height=0)
+
+# ============ CSS ============
 st.markdown("""
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-    
-    /* الخلفية المتدرجة كما في الصورة */
-    .stApp {
-        background: linear-gradient(180deg, #6e7df2 0%, #4b59c9 100%) !important;
-        font-family: 'Cairo', sans-serif !important;
-        direction: rtl;
-    }
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
 
-    /* البطاقة البيضاء الرئيسية */
-    .main-card {
-        background: white;
-        border-radius: 30px;
-        padding: 35px;
-        margin: 10px auto;
-        max-width: 900px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-        text-align: center;
-    }
+html, body, [data-testid="stAppViewContainer"] {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Cairo', sans-serif !important;
+    background: #030712 !important;
+}
 
-    /* العناوين */
-    .title-text { color: #5c6bc0; font-weight: 700; font-size: 2.2rem; margin-bottom: 5px; }
-    .desc-text { color: #757575; font-size: 1.1rem; margin-bottom: 25px; }
+.main-glass-box {
+    background: rgba(31, 41, 55, 0.4);
+    backdrop-filter: blur(15px);
+    border-radius: 28px;
+    padding: 30px;
+}
 
-    /* تخصيص الأزرار الملونة داخل الحاوية */
-    div[data-testid="stColumn"] > div > div > div > button {
-        color: white !important;
-        border: none !important;
-        border-radius: 15px !important;
-        height: 85px !important;
-        font-size: 1.2rem !important;
-        font-weight: 700 !important;
-        transition: 0.3s all;
-    }
+.buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 20px;
+    border-radius: 20px;
+}
 
-    /* ألوان الأزرار الأربعة بدقة */
-    div[data-testid="column"]:nth-of-type(1) button { background: #6f5cc3 !important; } /* استبدال */
-    div[data-testid="column"]:nth-of-type(2) button { background: #e5534b !important; } /* حذف */
-    div[data-testid="column"]:nth-of-type(3) button { background: #f0ad4e !important; } /* المتشابهة */
-    div[data-testid="column"]:nth-of-type(4) button { background: #5086eb !important; } /* المتكررات */
+.stButton>button {
+    border-radius: 14px !important;
+    height: 70px !important;
+    font-weight: bold !important;
+    font-size: 1.05rem !important;
+}
 
-    /* زر التصدير الأخضر الكبير */
-    .stDownloadButton > button {
-        background: #5cb885 !important;
-        color: white !important;
-        height: 65px !important;
-        width: 100% !important;
-        border-radius: 15px !important;
-        font-size: 1.4rem !important;
-        margin-top: 15px !important;
-    }
+.stats-card {
+    background: rgba(17, 24, 39, 0.85);
+    border-right: 5px solid #6366f1;
+    padding: 25px;
+    border-radius: 18px;
+    margin-top: 20px;
+}
 
-    /* منطقة رفع الملفات */
-    [data-testid="stFileUploadDropzone"] {
-        border: 2px dashed #5c6bc0 !important;
-        border-radius: 20px !important;
-        background: #f8f9ff !important;
-    }
-
-    /* شريط المعلومات الرمادي */
-    .file-meta { color: #616161; font-size: 1rem; font-weight: 600; margin-top: 15px; }
-    
-    /* تنسيق الجداول */
-    .stDataFrame { border-radius: 15px !important; overflow: hidden !important; border: 1px solid #eee !important; }
-    </style>
+h1, h2, h3, p, label { color: #f8fafc !important; }
+</style>
 """, unsafe_allow_html=True)
 
-# 3. منطق معالجة البيانات
-if 'df' not in st.session_state: st.session_state.df = None
-if 'history' not in st.session_state: st.session_state.history = []
+# ============ Session State ============
+if "df" not in st.session_state:
+    st.session_state.df = None
 
-def record_state():
-    st.session_state.history.append(st.session_state.df.copy())
-    if len(st.session_state.history) > 10: st.session_state.history.pop(0)
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-# --- الواجهة البرمجية ---
+if "file" not in st.session_state:
+    st.session_state.file = None
 
-# بطاقة العنوان (Header)
-st.markdown("""
-    <div class="main-card">
-        <div class="title-text">📊 محلل ملفات Excel المتقدم</div>
-        <div class="desc-text">أداة شاملة لقراءة وتحليل وتعديل ملفات Excel</div>
-    </div>
-""", unsafe_allow_html=True)
+def record():
+    if st.session_state.df is not None:
+        st.session_state.history.append(st.session_state.df.copy())
+        if len(st.session_state.history) > 20:
+            st.session_state.history.pop(0)
 
-# بطاقة العمليات الرئيسية
-with st.container():
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    
-    uploaded_file = st.file_uploader("", type=["xlsx", "csv"])
+# ============ العنوان ============
+st.markdown('<div class="main-glass-box">', unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center'><i class='fas fa-shield-halved'></i> المحلل الذكي الاحترافي</h1>", unsafe_allow_html=True)
 
-    if uploaded_file:
-        if st.session_state.df is None:
-            st.session_state.df = pd.read_excel(uploaded_file) if not uploaded_file.name.endswith('.csv') else pd.read_csv(uploaded_file)
-        
-        df = st.session_state.df
+# ============ رفع الملف ============
+uploaded = st.file_uploader("📂 ارفع ملف Excel أو CSV", type=["xlsx","csv"])
 
-        # شبكة الأزرار الأربعة (استبدال، حذف، متشابهة، متكررات)
-        # تم تقسيمها إلى صفين لضمان شكل المربع في الصورة
-        row1_c1, row1_c2 = st.columns(2)
-        with row1_c1:
-            with st.popover("🔄 استبدال"):
-                old_val = st.text_input("القيمة القديمة")
-                new_val = st.text_input("القيمة الجديدة")
-                if st.button("تنفيذ الاستبدال"):
-                    record_state(); st.session_state.df.replace(old_val, new_val, inplace=True); st.rerun()
-        with row1_c2:
-            with st.popover("🗑️ حذف المحدد"):
-                to_delete = st.multiselect("اختر الأعمدة لحذفها:", df.columns)
-                if st.button("تأكيد الحذف"):
-                    record_state(); st.session_state.df.drop(columns=to_delete, inplace=True); st.rerun()
+if uploaded is not None and uploaded.name != st.session_state.file:
+    try:
+        if uploaded.name.endswith(".csv"):
+            st.session_state.df = pd.read_csv(uploaded)
+        else:
+            st.session_state.df = pd.read_excel(uploaded)
 
-        row2_c1, row2_c2 = st.columns(2)
-        with row2_c1:
-            with st.popover("🔍 النصوص المتشابهة"):
-                st.info("سيتم تحليل العمود المختار في لوحة الإحصائيات بالأسفل")
-                sim_col = st.selectbox("اختر العمود:", df.columns, key="sim")
-        with row2_c2:
-            with st.popover("📑 المتكررات"):
-                st.write(f"عدد الصفوف المكررة: {df.duplicated().sum()}")
-                if st.button("إزالة التكرار"):
-                    record_state(); st.session_state.df.drop_duplicates(inplace=True); st.rerun()
+        st.session_state.file = uploaded.name
+        st.session_state.history = []
 
-        # زر التصدير الأخضر العريض أسفل الأزرار
-        out_buffer = io.BytesIO()
-        df.to_excel(out_buffer, index=False)
-        st.download_button("📥 تصدير", data=out_buffer.getvalue(), file_name="output.xlsx", use_container_width=True)
+    except Exception as e:
+        st.error(f"خطأ في قراءة الملف: {e}")
 
-        # معلومات الملف أسفل زر التصدير
-        st.markdown(f"""
-            <div class="file-meta">
-                الملف: {uploaded_file.name} | الصفوف: {len(df)} | الأعمدة: {len(df.columns)}
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# لوحة النتائج والفلترة (البطاقة الثالثة)
+# ============ عند وجود بيانات ============
 if st.session_state.df is not None:
-    st.markdown('<div class="main-card" style="text-align: right;">', unsafe_allow_html=True)
-    st.subheader("🛠️ مركز الفلترة والتحليل")
-    
-    col_f1, col_f2 = st.columns([2, 1])
-    with col_f1:
-        search_query = st.text_input("🔎 ابحث عن أحرف أو كلمات معينة لتصفية الجدول:")
-    with col_f2:
-        stat_column = st.selectbox("📊 عرض الأكثر تكراراً في:", st.session_state.df.columns)
 
-    # معالجة الفلترة
-    filtered_df = st.session_state.df.copy()
-    if search_query:
-        filtered_df = filtered_df[filtered_df.apply(lambda r: r.astype(str).str.contains(search_query, case=False).any(), axis=1)]
+    df = st.session_state.df
 
-    # عرض إحصائيات التكرار بدقة
-    if stat_column:
-        counts = filtered_df[stat_column].value_counts().reset_index()
-        counts.columns = ['القيمة', 'التكرار']
-        st.write(f"**أعلى 10 قيم تكراراً في عمود ({stat_column}):**")
-        st.dataframe(counts.head(10), use_container_width=True, hide_index=True)
-    
-    st.markdown("---")
-    st.markdown("#### 📋 معاينة البيانات النشطة")
-    st.dataframe(filtered_df, use_container_width=True)
-    
-    if st.button("↩️ تراجع عن آخر خطوة", use_container_width=True):
-        if st.session_state.history:
-            st.session_state.df = st.session_state.history.pop()
-            st.rerun()
-            
+    # أدوات أعلى
+    c1, c2 = st.columns(2)
+
+    with c1:
+        if st.button("↩️ تراجع"):
+            if st.session_state.history:
+                st.session_state.df = st.session_state.history.pop()
+                st.rerun()
+
+    with c2:
+        buffer = io.BytesIO()
+        df.to_excel(buffer, index=False)
+        st.download_button("📥 تصدير Excel", buffer.getvalue(), "Pro_Data.xlsx")
+
+    # ============ الأزرار ============
+    st.markdown('<div class="buttons-grid">', unsafe_allow_html=True)
+    b1, b2, b3, b4 = st.columns(4)
+
+    # استبدال
+    with b1:
+        with st.popover("🔄 استبدال"):
+            old = st.text_input("القيمة القديمة")
+            new = st.text_input("القيمة الجديدة")
+            if st.button("تنفيذ"):
+                record()
+                st.session_state.df.replace(old, new, inplace=True)
+                st.rerun()
+
+    # حذف أعمدة
+    with b2:
+        with st.popover("🗑️ حذف أعمدة"):
+            cols = st.multiselect("اختر الأعمدة", df.columns)
+            if st.button("حذف"):
+                record()
+                st.session_state.df.drop(columns=cols, inplace=True)
+                st.rerun()
+
+    # إزالة التكرار
+    with b3:
+        with st.popover("📑 إزالة التكرار"):
+            st.write("عدد الصفوف المكررة:", df.duplicated().sum())
+            if st.button("تنظيف"):
+                record()
+                st.session_state.df = st.session_state.df.drop_duplicates().reset_index(drop=True)
+                st.rerun()
+
+    # تحليل عمود
+    with b4:
+        analyze_col = st.selectbox("📊 تحليل عمود", df.columns)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
-# تحسين تفاعل الضغط بـ JavaScript
+    # ============ الفلترة الصحيحة ============
+    st.markdown('<div class="stats-card">', unsafe_allow_html=True)
+
+    search = st.text_input("🔎 بحث داخل الجدول")
+
+    if search:
+        mask = df.astype(str).apply(lambda col: col.str.contains(search, case=False, na=False))
+        filtered_df = df[mask.any(axis=1)].copy()
+    else:
+        filtered_df = df.copy()
+
+    filtered_df.reset_index(drop=True, inplace=True)
+
+    # ============ تحليل التكرار الصحيح ============
+    if analyze_col:
+
+        series = filtered_df[analyze_col].astype(str).str.strip()
+        series = series.replace("", "فارغ")
+        series = series.fillna("فارغ")
+
+        counts = series.value_counts().reset_index()
+        counts.columns = ["القيمة", "عدد التكرارات"]
+
+        st.markdown(
+            f"<h3><i class='fas fa-chart-column'></i> تحليل العمود: {analyze_col}</h3>",
+            unsafe_allow_html=True
+        )
+
+        st.dataframe(counts, use_container_width=True, hide_index=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ============ عرض الجدول ============
+    st.markdown("<h3><i class='fas fa-table'></i> استعراض البيانات</h3>", unsafe_allow_html=True)
+    st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# تأثير ضغط الأزرار
 components.html("""
 <script>
-    const btns = window.parent.document.querySelectorAll('button');
-    btns.forEach(btn => {
-        btn.addEventListener('mousedown', () => btn.style.transform = 'scale(0.96)');
-        btn.addEventListener('mouseup', () => btn.style.transform = 'scale(1)');
-    });
+const buttons = window.parent.document.querySelectorAll('button');
+buttons.forEach(btn => {
+    btn.addEventListener('mousedown', () => btn.style.transform = 'scale(0.96)');
+    btn.addEventListener('mouseup', () => btn.style.transform = 'scale(1)');
+});
 </script>
 """, height=0)
