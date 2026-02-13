@@ -3,38 +3,50 @@ import pandas as pd
 import io
 from difflib import SequenceMatcher
 
-# 1. إعدادات الصفحة الاحترافية
+# 1. إعدادات الصفحة
 st.set_page_config(page_title="Data Processor Pro", page_icon="📊", layout="wide")
 
-# 2. تصميم CSS متقدم (بدون إيموجي، تركيز على الحدود والألوان الرصينة)
+# 2. تصميم الـ CSS الموحد (ثبات الألوان ومنع تداخل الوضع الداكن)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; }
     
-    /* تصميم الأزرار الاحترافي */
-    .stButton>button { 
-        background: #6200ea;
-        color: white; border-radius: 8px; border: none;
-        padding: 0.5rem 1rem; font-weight: 600; width: 100%;
+    .main { background-color: #ffffff !important; }
+    html, body, [class*="css"] { 
+        font-family: 'Cairo', sans-serif; 
+        text-align: right; direction: rtl; color: #2c3e50 !important;
     }
-    .stButton>button:hover { background: #3700b3; border: none; }
-    
-    /* صناديق البيانات */
+
+    h1, h2, h3, h4, p, span, label { color: #2c3e50 !important; }
+
+    /* تنسيق البطاقات */
     .data-card {
-        border: 1px solid #e0e0e0;
+        border: 2px solid #6200ea;
         padding: 15px;
-        border-radius: 10px;
-        background-color: #ffffff;
+        border-radius: 12px;
+        background-color: #f8f9fa !important;
         margin-bottom: 10px;
     }
     
-    /* إخفاء الإيموجي الافتراضي من التبويبات */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    /* تنسيق الأزرار */
+    .stButton>button { 
+        background: #6200ea !important;
+        color: white !important; 
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+        width: 100%;
+    }
+    
+    /* الجداول */
+    [data-testid="stDataFrame"] {
+        background-color: #ffffff !important;
+        border: 1px solid #dee2e6 !important;
+    }
+
+    /* التبويبات */
     .stTabs [data-baseweb="tab"] {
-        background-color: #f8f9fa;
-        border-radius: 5px 5px 0 0;
-        padding: 10px 20px;
+        color: #6200ea !important;
+        font-weight: bold !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -52,92 +64,100 @@ if 'history' not in st.session_state:
 
 def save_step():
     st.session_state.history.append(st.session_state.df.copy())
-    if len(st.session_state.history) > 10: st.session_state.history.pop(0)
+    if len(st.session_state.history) > 15: st.session_state.history.pop(0)
 
 # --- الواجهة الرئيسية ---
-st.markdown("<h2 style='text-align: center; color: #4527a0;'>منصة معالجة وتنظيف البيانات</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: #6200ea;'>المنصة المتكاملة لإدارة البيانات</h2>", unsafe_allow_html=True)
 
-# منطقة الرفع
-with st.container():
-    uploaded_file = st.file_uploader("قم بسحب وإفلات الملف هنا", type=["xlsx", "csv"], help="يدعم ملفات Excel و CSV")
+uploaded_file = st.file_uploader("قم برفع ملفك (Excel/CSV)", type=["xlsx", "csv"])
 
 if uploaded_file:
     if st.session_state.df is None:
-        try:
-            st.session_state.df = pd.read_excel(uploaded_file) if not uploaded_file.name.endswith('.csv') else pd.read_csv(uploaded_file)
-            save_step()
-        except Exception as e:
-            st.error(f"حدث خطأ أثناء تحميل الملف: {e}")
+        st.session_state.df = pd.read_excel(uploaded_file) if not uploaded_file.name.endswith('.csv') else pd.read_csv(uploaded_file)
+        save_step()
 
-    if st.session_state.df is not None:
-        df = st.session_state.df
+    df = st.session_state.df
 
-        # شريط الأدوات العلوي (Toolbar)
-        col_tool1, col_tool2, col_tool3 = st.columns([1, 1, 2])
-        with col_tool1:
-            if st.button("Undo", icon=":material/undo:"):
-                if len(st.session_state.history) > 1:
-                    st.session_state.history.pop()
-                    st.session_state.df = st.session_state.history[-1].copy()
-                    st.rerun()
-        with col_tool3:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df.to_excel(writer, index=False)
-            st.download_button("Export Excel", data=output.getvalue(), file_name="Cleaned_Data.xlsx", icon=":material/download:")
+    # شريط التحكم العلوي
+    col_t1, col_t2, col_t3 = st.columns([1, 1, 2])
+    with col_t1:
+        if st.button("Undo", icon=":material/undo:"):
+            if len(st.session_state.history) > 1:
+                st.session_state.history.pop()
+                st.session_state.df = st.session_state.history[-1].copy()
+                st.rerun()
+    with col_t3:
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False)
+        st.download_button("تصدير الملف النهائي", data=output.getvalue(), file_name="Cleaned_Data.xlsx", icon=":material/download:")
 
-        # التبويبات الرئيسية بأيقونات مادية
-        tab_clean, tab_view = st.tabs(["Smart Cleaning", "Data Explorer"])
+    # التبويبات التي تجمع كل طلباتك
+    tab_manual, tab_smart, tab_view = st.tabs(["⚙️ أدوات يدوية", "🧠 أدوات ذكية", "📋 استعراض وبحث"])
 
-        with tab_clean:
-            st.markdown("#### فحص وتوحيد البيانات المتكررة")
-            st.info("سيقوم النظام بمقارنة النصوص المكتوبة بأشكال مختلفة واقتراح تصحيح موحد لها.", icon=":material/info:")
+    with tab_manual:
+        st.markdown("### الإجراءات اليدوية")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**🗑️ حذف أعمدة**")
+            cols_to_del = st.multiselect("اختر الأعمدة لحذفها:", df.columns)
+            if st.button("تأكيد الحذف", icon=":material/delete_sweep:"):
+                save_step()
+                st.session_state.df.drop(columns=cols_to_del, inplace=True)
+                st.rerun()
+        
+        with col2:
+            st.markdown("**🔄 استبدال قيم**")
+            old_v = st.text_input("القيمة القديمة (نص أو رقم)")
+            new_v = st.text_input("القيمة الجديدة")
+            if st.button("تنفيذ الاستبدال الشامل", icon=":material/find_replace:"):
+                save_step()
+                # معالجة النصوص والأرقام
+                ov = float(old_v) if old_v.replace('.','',1).isdigit() else old_v
+                nv = float(new_v) if new_v.replace('.','',1).isdigit() else new_v
+                st.session_state.df.replace(ov, nv, inplace=True)
+                st.rerun()
+
+    with tab_smart:
+        st.markdown("### كشف التشابه الإملائي وتوحيده")
+        target_col = st.selectbox("اختر عموداً لفحصه (مثل الكلية):", df.columns)
+        
+        if st.button("بدء التحليل الذكي", icon=":material/psychology:"):
+            unique_vals = df[target_col].dropna().unique().astype(str)
+            checked = set()
+            found = False
+            for i, v1 in enumerate(unique_vals):
+                if v1 in checked: continue
+                group = [v1] + [v2 for v2 in unique_vals[i+1:] if are_similar(v1, v2)]
+                if len(group) > 1:
+                    found = True
+                    st.markdown(f'<div class="data-card">⚠️ تم كشف تشتت في: <b>{v1}</b><br><small>القيم: {", ".join(group)}</small></div>', unsafe_allow_html=True)
+                    c_in, c_btn = st.columns([3, 1])
+                    new_val = c_in.text_input(f"توحيد المجموعة إلى:", value=v1, key=f"in_{v1}")
+                    if c_btn.button("اعتماد", key=f"btn_{v1}", icon=":material/done_all:"):
+                        save_step()
+                        st.session_state.df[target_col].replace(group, new_val, inplace=True)
+                        st.rerun()
+                for item in group: checked.add(item)
+            if not found: st.success("لا توجد مسميات مشتتة.")
+
+    with tab_view:
+        st.markdown("### البحث والاستعراض")
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            search_all = st.text_input("البحث الشامل في الجدول:", icon=":material/search:")
+        with col_s2:
+            filter_col = st.selectbox("البحث في عمود محدد:", ["كل الأعمدة"] + list(df.columns))
             
-            target_col = st.selectbox("اختر العمود المستهدف للفحص:", df.columns)
-            
-            if st.button("Start Analysis", icon=":material/analytics:"):
-                unique_vals = df[target_col].dropna().unique().astype(str)
-                checked = set()
-                found_issues = False
+        display_df = df
+        if search_all:
+            mask = df.astype(str).apply(lambda x: x.str.contains(search_all, case=False, na=False)).any(axis=1)
+            display_df = display_df[mask]
+        
+        if filter_col != "كل الأعمدة":
+            specific_search = st.text_input(f"بحث خاص داخل {filter_col}:")
+            if specific_search:
+                display_df = display_df[display_df[filter_col].astype(str).str.contains(specific_search, case=False, na=False)]
 
-                for i, v1 in enumerate(unique_vals):
-                    if v1 in checked: continue
-                    group = [v1]
-                    for v2 in unique_vals[i+1:]:
-                        if are_similar(v1, v2):
-                            group.append(v2)
-                            checked.add(v2)
-                    
-                    if len(group) > 1:
-                        found_issues = True
-                        with st.container():
-                            st.markdown(f"""
-                            <div class="data-card">
-                                <strong>تنبيه: مسميات مشتتة مكتشفة</strong><br>
-                                <small>القيم الحالية: {', '.join(group)}</small>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            c_in, c_btn = st.columns([3, 1])
-                            new_val = c_in.text_input("الاسم الموحد المعتمد:", value=v1, key=f"in_{v1}")
-                            if c_btn.button("Confirm", key=f"btn_{v1}", icon=":material/check_circle:"):
-                                save_step()
-                                st.session_state.df[target_col] = st.session_state.df[target_col].replace(group, new_val)
-                                st.rerun()
-                    checked.add(v1)
-                
-                if not found_issues:
-                    st.success("البيانات في هذا العمود تبدو موحدة بشكل سليم.", icon=":material/verified:")
-
-        with tab_view:
-            # فلترة البحث
-            search_query = st.text_input("بحث سريع في الجدول:", placeholder="اكتب للبحث في جميع الحقول...", icon=":material/search:")
-            
-            display_df = df
-            if search_query:
-                mask = df.astype(str).apply(lambda x: x.str.contains(search_query, case=False, na=False)).any(axis=1)
-                display_df = df[mask]
-
-            st.markdown(f"**عدد الصفوف المستعرضة:** {len(display_df)}")
-            st.dataframe(display_df, use_container_width=True)
-
+        st.dataframe(display_df, use_container_width=True)
