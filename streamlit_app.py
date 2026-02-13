@@ -3,10 +3,14 @@ import pandas as pd
 import io
 from rapidfuzz import process, fuzz
 
-# ---------- إعداد الصفحة ----------
+# ==================================================
+# إعداد الصفحة
+# ==================================================
 st.set_page_config(page_title="Data Cleaner Pro", page_icon="📊", layout="wide")
 
-# ---------- التصميم ----------
+# ==================================================
+# التصميم الاحترافي (توسيط + RTL + أزرار وسط)
+# ==================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
@@ -17,10 +21,19 @@ html, body, [data-testid="stAppViewContainer"]{
     background:#020617;
 }
 
-h1,h2,h3,label,p{
+/* العناوين وسط */
+h1,h2,h3{
+    text-align:center;
     color:#e5e7eb !important;
 }
 
+/* النصوص يمين */
+p,label,span{
+    text-align:right;
+    color:#e5e7eb !important;
+}
+
+/* صندوق الإحصائيات */
 .metric-box{
     background:#0f172a;
     padding:18px;
@@ -29,31 +42,50 @@ h1,h2,h3,label,p{
     border:1px solid rgba(255,255,255,0.08);
 }
 
+/* الأزرار بالوسط */
+.stButton{
+    display:flex;
+    justify-content:center;
+}
+
 .stButton>button{
     background:#0ea5e9;
     color:white;
-    border-radius:10px;
-    height:45px;
-    border:none;
+    border-radius:12px;
+    height:48px;
     width:100%;
+    border:none;
+    font-size:15px;
 }
 
 .stButton>button:hover{
     background:#0284c7;
 }
 
+.stDownloadButton{
+    display:flex;
+    justify-content:center;
+}
+
 .stDownloadButton>button{
     background:#22c55e;
     color:white;
-    border-radius:10px;
-    height:45px;
+    border-radius:12px;
+    height:48px;
+    width:60%;
     border:none;
-    width:100%;
+}
+
+[data-testid="stDataFrame"]{
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:15px;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- الذاكرة ----------
+# ==================================================
+# الذاكرة
+# ==================================================
 if "df" not in st.session_state:
     st.session_state.df = None
 
@@ -65,9 +97,14 @@ def save_history():
     if len(st.session_state.history) > 15:
         st.session_state.history.pop(0)
 
-# ---------- رفع الملف ----------
+# ==================================================
+# العنوان
+# ==================================================
 st.title("📊 منصة تنظيف البيانات الاحترافية")
 
+# ==================================================
+# رفع الملف
+# ==================================================
 uploaded_file = st.file_uploader("ارفع ملف Excel أو CSV", type=["xlsx","csv"])
 
 if uploaded_file and st.session_state.df is None:
@@ -82,10 +119,9 @@ if df is None:
     st.info("⬆️ قم برفع ملف البيانات للبدء")
     st.stop()
 
-# =====================================================
-# ======= معلومات البيانات (أول ما يراه المحلل) =======
-# =====================================================
-
+# ==================================================
+# إحصائيات البيانات
+# ==================================================
 colA, colB = st.columns(2)
 
 with colA:
@@ -96,118 +132,100 @@ with colB:
 
 st.divider()
 
-# =====================================================
-# ================= حذف الأعمدة ========================
-# =====================================================
-
-st.subheader("🧱 حذف الأعمدة غير المهمة")
-
-cols_delete = st.multiselect("اختر الأعمدة المراد حذفها", df.columns)
-
-if st.button("حذف الأعمدة المحددة"):
-    if cols_delete:
-        save_history()
-        st.session_state.df.drop(columns=cols_delete, inplace=True)
-        st.rerun()
-
-# =====================================================
-# ================= حذف الصفوف ========================
-# =====================================================
-
-st.subheader("🗑️ حذف صفوف")
-
-row_indices = st.multiselect(
-    "اختر أرقام الصفوف للحذف",
-    df.index.tolist()
-)
-
-if st.button("حذف الصفوف المحددة"):
-    if row_indices:
-        save_history()
-        st.session_state.df.drop(index=row_indices, inplace=True)
-        st.rerun()
-
-# =====================================================
-# ================= الاستبدال =========================
-# =====================================================
-
-st.subheader("🔁 استبدال القيم")
-
-rep_col = st.selectbox("اختر العمود", df.columns)
-old_val = st.text_input("القيمة القديمة")
-new_val = st.text_input("القيمة الجديدة")
-
-if st.button("تنفيذ الاستبدال"):
-    if old_val != "":
-        save_history()
-        st.session_state.df[rep_col] = st.session_state.df[rep_col].astype(str).str.replace(old_val, new_val, regex=False)
-        st.rerun()
-
-# =====================================================
-# ================= البحث والفلترة =====================
-# =====================================================
-
+# ==================================================
+# البحث والفلترة
+# ==================================================
 st.subheader("🔎 البحث والفلترة")
 
-search = st.text_input("بحث عام داخل الجدول")
+search = st.text_input("بحث داخل كل الجدول")
 
-filtered_df = st.session_state.df.copy()
-
+filtered_df = df.copy()
 if search:
     filtered_df = filtered_df[
-        filtered_df.apply(lambda row: row.astype(str).str.contains(search, case=False).any(), axis=1)
+        filtered_df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
     ]
 
-filter_col = st.selectbox("فلترة حسب عمود", st.session_state.df.columns)
-vals = st.session_state.df[filter_col].dropna().unique()
-chosen = st.multiselect("القيم", vals)
+filter_col = st.selectbox("فلترة حسب عمود", df.columns)
+values = df[filter_col].dropna().unique()
+chosen = st.multiselect("اختر القيم", values)
 
 if chosen:
     filtered_df = filtered_df[filtered_df[filter_col].isin(chosen)]
 
 st.dataframe(filtered_df, use_container_width=True)
 
-# =====================================================
-# ================= كشف التشابه ========================
-# =====================================================
+# ==================================================
+# أدوات التنظيف (قوائم منسدلة)
+# ==================================================
+st.divider()
+st.subheader("🛠️ أدوات التنظيف")
 
-st.subheader("🧠 كشف القيم المتشابهة")
+c1, c2, c3, c4, c5 = st.columns(5)
 
-sim_col = st.selectbox("اختر العمود للفحص", st.session_state.df.columns, key="sim")
+# حذف الأعمدة
+with c1:
+    with st.popover("🧱 حذف الأعمدة"):
+        cols = st.multiselect("الأعمدة", st.session_state.df.columns)
+        if st.button("تنفيذ حذف الأعمدة"):
+            if cols:
+                save_history()
+                st.session_state.df.drop(columns=cols, inplace=True)
+                st.rerun()
 
-values = st.session_state.df[sim_col].dropna().astype(str).unique()
-similar = []
+# حذف الصفوف
+with c2:
+    with st.popover("🗑️ حذف الصفوف"):
+        rows = st.multiselect("أرقام الصفوف", st.session_state.df.index.tolist())
+        if st.button("تنفيذ حذف الصفوف"):
+            if rows:
+                save_history()
+                st.session_state.df.drop(index=rows, inplace=True)
+                st.rerun()
 
-for v in values:
-    matches = process.extract(v, values, scorer=fuzz.ratio, limit=5)
-    for m in matches:
-        if m[1] >= 85 and m[0] != v:
-            similar.append((v, m[0], m[1]))
+# الاستبدال
+with c3:
+    with st.popover("🔁 استبدال القيم"):
+        col = st.selectbox("العمود", st.session_state.df.columns)
+        old = st.text_input("القيمة القديمة")
+        new = st.text_input("القيمة الجديدة")
+        if st.button("تنفيذ الاستبدال"):
+            if old != "":
+                save_history()
+                st.session_state.df[col] = st.session_state.df[col].astype(str).str.replace(old, new, regex=False)
+                st.rerun()
 
-if similar:
-    sim_df = pd.DataFrame(similar, columns=["القيمة 1","القيمة 2","نسبة التشابه"])
-    st.dataframe(sim_df, use_container_width=True)
-else:
-    st.success("لا توجد قيم متشابهة")
+# إزالة التكرار
+with c4:
+    with st.popover("♻️ إزالة التكرار"):
+        dup = st.session_state.df.duplicated().sum()
+        st.write(f"عدد الصفوف المكررة: {dup}")
+        if st.button("إزالة الآن"):
+            save_history()
+            st.session_state.df.drop_duplicates(inplace=True)
+            st.rerun()
 
-# =====================================================
-# ================= إزالة التكرار ======================
-# =====================================================
+# كشف التشابه
+with c5:
+    with st.popover("🧠 كشف التشابه"):
+        sim_col = st.selectbox("اختر العمود", st.session_state.df.columns)
+        values = st.session_state.df[sim_col].dropna().astype(str).unique()
+        sim = []
+        for v in values:
+            matches = process.extract(v, values, scorer=fuzz.ratio, limit=5)
+            for m in matches:
+                if m[1] >= 85 and m[0] != v:
+                    sim.append((v, m[0], m[1]))
 
-st.subheader("♻️ إزالة التكرار")
+        if sim:
+            sim_df = pd.DataFrame(sim, columns=["القيمة 1","القيمة 2","نسبة التشابه"])
+            st.dataframe(sim_df, use_container_width=True)
+        else:
+            st.info("لا توجد قيم متشابهة")
 
-dup = st.session_state.df.duplicated().sum()
-st.write(f"عدد الصفوف المكررة: {dup}")
-
-if st.button("إزالة الصفوف المكررة"):
-    save_history()
-    st.session_state.df.drop_duplicates(inplace=True)
-    st.rerun()
-
-# =====================================================
-# ================= التصدير ============================
-# =====================================================
-
+# ==================================================
+# تصدير الملف
+# ==================================================
+st.divider()
 st.subheader("📥 تحميل الملف بعد التنظيف")
 
 buffer = io.BytesIO()
