@@ -1,5 +1,5 @@
 # =========================================
-# Pro Data Cleaner - Stable Final Version
+# Data Standardizer PRO (Google Ready)
 # =========================================
 
 import streamlit as st
@@ -17,8 +17,9 @@ html, body, [data-testid="stAppViewContainer"]{
     background:#020617;
     color:#e5e7eb;
 }
-.block-container{max-width:1100px;margin:auto;}
+.block-container{max-width:1200px;margin:auto;}
 h1{text-align:center;}
+.stTextInput input{background:#0f172a;color:white;}
 .stButton>button{
     background:linear-gradient(90deg,#2563eb,#1d4ed8);
     color:white;
@@ -26,17 +27,10 @@ h1{text-align:center;}
     height:46px;
     width:100%;
 }
-.stDownloadButton>button{
-    background:linear-gradient(90deg,#16a34a,#15803d)!important;
-    color:white!important;
-    border-radius:12px!important;
-    height:52px!important;
-    width:100%!important;
-}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 منصة تنظيف البيانات الاحترافية")
+st.title("📊 منصة توحيد وتنظيف البيانات")
 
 # ---------- Session ----------
 if "df" not in st.session_state:
@@ -46,21 +40,15 @@ if "history" not in st.session_state:
 
 def save_state():
     st.session_state.history.append(st.session_state.df.copy())
-    if len(st.session_state.history) > 20:
-        st.session_state.history.pop(0)
 
 # ---------- Upload ----------
 file = st.file_uploader("ارفع ملف Excel أو CSV", type=["xlsx","csv"])
 
 if file and st.session_state.df is None:
-    try:
-        if file.name.endswith(".csv"):
-            st.session_state.df = pd.read_csv(file)
-        else:
-            st.session_state.df = pd.read_excel(file)
-    except:
-        st.error("فشل قراءة الملف")
-        st.stop()
+    if file.name.endswith(".csv"):
+        st.session_state.df = pd.read_csv(file)
+    else:
+        st.session_state.df = pd.read_excel(file)
 
 if st.session_state.df is None:
     st.info("⬆️ ارفع ملف للبدء")
@@ -68,122 +56,104 @@ if st.session_state.df is None:
 
 df = st.session_state.df
 
-# ---------- Table ----------
-st.dataframe(df, use_container_width=True)
+# ==================================================
+# 🔎 فلتر البحث الحرفي
+# ==================================================
+st.subheader("البحث داخل البيانات")
 
-# ---------- Undo ----------
-if st.button("↩️ التراجع عن آخر عملية"):
-    if st.session_state.history:
-        st.session_state.df = st.session_state.history.pop()
-        st.rerun()
-    else:
-        st.warning("لا توجد عمليات سابقة")
+search_text = st.text_input("اكتب أي كلمة للبحث داخل كامل الجدول")
+
+if search_text:
+    mask = df.astype(str).apply(lambda row: row.str.contains(search_text, case=False, na=False)).any(axis=1)
+    filtered_df = df[mask]
+    st.dataframe(filtered_df, use_container_width=True)
+else:
+    st.dataframe(df, use_container_width=True)
 
 st.divider()
 
-tabs = st.tabs(["📊 فحص التكرار", "🧹 حذف أعمدة", "🔁 استبدال", "🧠 التشابه الإملائي"])
+tabs = st.tabs(["📊 تحليل وتوحيد القيم", "🧹 حذف أعمدة", "🔁 استبدال شامل"])
 
 # ==================================================
-# 1- فحص التكرار
+# 1️⃣ تحليل التكرار الحقيقي
 # ==================================================
 with tabs[0]:
-    col = st.selectbox("اختر العمود", df.columns, key="dupcol")
 
-    if st.button("فحص التكرار"):
-        duplicates = df[df.duplicated(subset=[col], keep=False)]
+    col = st.selectbox("اختر العمود المراد تحليله", df.columns)
 
-        if duplicates.empty:
-            st.success("لا يوجد تكرار مطابق")
+    if st.button("تحليل القيم المتكررة"):
+
+        values = df[col].dropna().astype(str)
+
+        freq = values.value_counts()
+
+        st.subheader("أكثر القيم ظهوراً")
+        st.dataframe(freq.reset_index().rename(columns={"index":"القيمة",col:"عدد التكرار"}))
+
+        # --- تجميع النصوص المتقاربة ---
+        unique_values = list(freq.index)
+        groups=[]
+        used=set()
+
+        for val in unique_values:
+            if val in used:
+                continue
+            group=[val]
+            used.add(val)
+
+            for other in unique_values:
+                if other not in used:
+                    if fuzz.token_sort_ratio(val,other) > 80:
+                        group.append(other)
+                        used.add(other)
+
+            if len(group)>1:
+                groups.append(group)
+
+        if groups:
+            st.subheader("نصوص متقاربة (اختر النص المعتمد)")
+
+            for i,g in enumerate(groups):
+                st.write("النصوص المكتشفة:",g)
+
+                canonical = st.text_input(f"النص المعتمد للمجموعة {i+1}", key=f"canon{i}")
+
+                if st.button(f"تطبيق التوحيد {i+1}", key=f"apply{i}"):
+                    save_state()
+                    for word in g:
+                        st.session_state.df[col]=st.session_state.df[col].astype(str).str.replace(word,canonical,regex=False)
+                    st.success("تم توحيد النصوص")
+                    st.rerun()
+
         else:
-            st.warning(f"وجد {duplicates.shape[0]} صفوف مكررة")
-            st.dataframe(duplicates)
-
-        st.subheader("تشابه نصي تقريبي")
-        values = df[col].dropna().astype(str).unique()
-        found = False
-
-        for i in range(len(values)):
-            for j in range(i+1, len(values)):
-                score = fuzz.ratio(values[i], values[j])
-                if score > 85 and values[i] != values[j]:
-                    st.write(f"🔎 {values[i]}  ↔  {values[j]}  ({score}%)")
-                    found = True
-
-        if not found:
-            st.info("لا يوجد تشابه إملائي ملحوظ")
+            st.success("لا توجد اختلافات إملائية كبيرة")
 
 # ==================================================
-# 2- حذف الأعمدة
+# 2️⃣ حذف أعمدة متعددة
 # ==================================================
 with tabs[1]:
-    cols = st.multiselect("اختر الأعمدة المراد حذفها", df.columns, key="delcols")
+    cols = st.multiselect("اختر الأعمدة المراد حذفها", df.columns)
 
-    if st.button("تنفيذ حذف الأعمدة"):
+    if st.button("تنفيذ الحذف"):
         if cols:
             save_state()
             st.session_state.df.drop(columns=cols, inplace=True)
             st.success("تم حذف الأعمدة")
             st.rerun()
-        else:
-            st.warning("اختر عموداً")
 
 # ==================================================
-# 3- استبدال القيم
+# 3️⃣ استبدال شامل
 # ==================================================
 with tabs[2]:
-    column = st.selectbox("اختر العمود", df.columns, key="replacecol")
-    old = st.text_input("القيمة القديمة")
-    new = st.text_input("القيمة الجديدة")
+    column = st.selectbox("اختر العمود", df.columns)
+    old = st.text_input("النص أو الرقم القديم")
+    new = st.text_input("النص الجديد")
 
     if st.button("تنفيذ الاستبدال"):
-        if old:
-            save_state()
-            st.session_state.df[column] = st.session_state.df[column].astype(str).str.replace(old, new, regex=False)
-            st.success("تم الاستبدال بنجاح")
-            st.rerun()
-        else:
-            st.warning("اكتب القيمة القديمة")
-
-# ==================================================
-# 4- التشابه الإملائي (تحديد يدوي)
-# ==================================================
-with tabs[3]:
-    sim_col = st.selectbox("اختر العمود", df.columns, key="simcol")
-    threshold = st.slider("درجة التشابه", 70, 100, 85)
-
-    if st.button("اكتشاف النصوص المتقاربة"):
-        values = df[sim_col].dropna().astype(str).unique().tolist()
-        groups=[]
-        used=set()
-
-        for v in values:
-            if v in used:
-                continue
-            group=[v]
-            used.add(v)
-            for other in values:
-                if other not in used:
-                    if fuzz.ratio(v,other)>=threshold:
-                        group.append(other)
-                        used.add(other)
-            if len(group)>1:
-                groups.append(group)
-
-        if not groups:
-            st.success("لا توجد نصوص متقاربة")
-        else:
-            st.session_state.sim_groups = groups
-
-    if "sim_groups" in st.session_state:
-        for idx, g in enumerate(st.session_state.sim_groups):
-            st.write("متشابهة:", g)
-            replacement = st.text_input(f"النص الموحد للمجموعة {idx+1}", key=f"rep{idx}")
-            if st.button(f"تطبيق المجموعة {idx+1}", key=f"apply{idx}"):
-                save_state()
-                for word in g:
-                    st.session_state.df[sim_col]=st.session_state.df[sim_col].astype(str).str.replace(word,replacement,regex=False)
-                st.success("تم التعديل")
-                st.rerun()
+        save_state()
+        st.session_state.df[column]=st.session_state.df[column].astype(str).str.replace(old,new,regex=False)
+        st.success("تم الاستبدال")
+        st.rerun()
 
 st.divider()
 
@@ -195,6 +165,5 @@ with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
 st.download_button(
     label="⬇️ تحميل الملف بعد التنظيف",
     data=output.getvalue(),
-    file_name="cleaned_data.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    file_name="cleaned_data.xlsx"
 )
