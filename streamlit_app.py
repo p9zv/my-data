@@ -5,12 +5,24 @@ from rapidfuzz import process, fuzz
 import streamlit.components.v1 as components
 
 # ======================================================
-# كود إثبات الملكية لجوجل (Google Analytics ID)
+# 1. إعدادات الصفحة وتحسين محركات البحث (SEO)
 # ======================================================
-# ضع رقم الـ G الخاص بك هنا بدلاً من G-XXXXXXXXXX
-GA_ID = "G-BG60LYEZFM" 
+st.set_page_config(
+    page_title="محلل ومنظف ملفات إكسل الذكي | أداة مجانية أونلاين",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-components.html(f"""
+# ======================================================
+# كود إثبات الملكية المباشر لجوجل (Google Verification & Analytics)
+# ======================================================
+GA_ID = "G-BG60LYEZFM"
+
+# هذا الجزء يقوم بحقن الأكواد في واجهة الموقع ليراها جوجل فوراً
+st.markdown(f"""
+    <meta name="google-site-verification" content="google68d2f7877c4e50da.html" />
+    
     <script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -18,22 +30,9 @@ components.html(f"""
         gtag('js', new Date());
         gtag('config', '{GA_ID}');
     </script>
-""", height=0)
+""", unsafe_allow_html=True)
 
-# ======================================================
-# 1. إعدادات الصفحة وتحسين محركات البحث (SEO)
-# ======================================================
-st.set_page_config(
-    page_title="محلل ومنظف ملفات إكسل الذكي | أداة مجانية أونلاين",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={
-        'About': "# أداة احترافية لتنظيف ملفات Excel و CSV أونلاين. احذف التكرارات، استبدل القيم، وحلل البيانات بسهولة."
-    }
-)
-
-# كود تقني لجوجل (Schema.org) لإظهار الموقع كأداة احترافية
+# كود تقني إضافي (Schema.org) لتحسين ظهورك في نتائج البحث
 st.markdown("""
     <script type="application/ld+json">
     {
@@ -195,7 +194,6 @@ with c:
     st.download_button("⬇️ تحميل الملف النظيف (Excel)", buffer.getvalue(), "cleaned_data.xlsx", use_container_width=True)
 
 st.markdown("<br><h3 style='font-size:1.2rem;'>📢 ساعدنا في نشر الأداة</h3>", unsafe_allow_html=True)
-# استبدل الرابط أدناه برابط موقعك الحقيقي
 app_url = "https://my-data-p9zv-anl.streamlit.app" 
 st.markdown(f"""
     <div style="text-align:center;">
