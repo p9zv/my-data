@@ -1,67 +1,70 @@
-# =====================================
-# Smart Excel Cleaner - Stable Version
-# =====================================
+# =========================================
+# Pro Data Cleaner - Professional Edition
+# =========================================
 
 import streamlit as st
 import pandas as pd
 import io
+from rapidfuzz import process, fuzz
 
-st.set_page_config(page_title="تنظيف ملفات الإكسل", page_icon="📊", layout="wide")
+st.set_page_config(page_title="منصة تنظيف البيانات الاحترافية", page_icon="📊", layout="wide")
 
-# ===== تصميم =====
+# ---------- تصميم احترافي ----------
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"]{
     direction: rtl;
-    background:#0f172a;
-    color:white;
+    background: #020617;
+    color: #e5e7eb;
 }
-h1{text-align:center;}
-
+.block-container{
+    max-width:1100px;
+    margin:auto;
+}
+h1{
+    text-align:center;
+    font-size:40px;
+}
 .stButton>button{
-    background:#2563eb;
+    background:linear-gradient(90deg,#2563eb,#1d4ed8);
     color:white;
-    border-radius:10px;
-    height:45px;
+    border-radius:14px;
+    height:48px;
     font-weight:bold;
+    width:100%;
 }
 .stDownloadButton>button{
-    background:#16a34a !important;
-    color:white !important;
-    border-radius:12px !important;
-    height:50px !important;
+    background:linear-gradient(90deg,#16a34a,#15803d)!important;
+    color:white!important;
+    border-radius:14px!important;
+    height:55px!important;
+    width:100%!important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 منصة تنظيف وتحليل ملفات الإكسل")
+st.title("📊 منصة تنظيف البيانات الاحترافية")
 
-# ===== ذاكرة التطبيق (المهم جداً) =====
+# ---------- Session ----------
 if "df" not in st.session_state:
     st.session_state.df = None
-
 if "history" not in st.session_state:
     st.session_state.history = []
 
-def save_history():
-    if st.session_state.df is not None:
-        st.session_state.history.append(st.session_state.df.copy())
-        if len(st.session_state.history) > 15:
-            st.session_state.history.pop(0)
+def save():
+    st.session_state.history.append(st.session_state.df.copy())
+    if len(st.session_state.history) > 20:
+        st.session_state.history.pop(0)
 
-# ===== رفع الملف =====
-uploaded_file = st.file_uploader("📂 ارفع ملف Excel أو CSV", type=["xlsx","csv"])
+# ---------- رفع الملف ----------
+file = st.file_uploader("ارفع ملف Excel أو CSV", type=["xlsx","csv"])
 
-if uploaded_file:
+if file:
     if st.session_state.df is None:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                st.session_state.df = pd.read_csv(uploaded_file)
-            else:
-                st.session_state.df = pd.read_excel(uploaded_file)
-        except:
-            st.error("الملف غير صالح")
-            st.stop()
+        if file.name.endswith(".csv"):
+            st.session_state.df = pd.read_csv(file)
+        else:
+            st.session_state.df = pd.read_excel(file)
 
 if st.session_state.df is None:
     st.info("⬆️ ارفع ملف للبدء")
@@ -69,49 +72,86 @@ if st.session_state.df is None:
 
 df = st.session_state.df
 
-# ===== احصائيات =====
+# ---------- معلومات ----------
 c1,c2 = st.columns(2)
 c1.metric("عدد الصفوف", df.shape[0])
 c2.metric("عدد الأعمدة", df.shape[1])
 
 st.divider()
 
-# ===== البحث =====
-search = st.text_input("🔍 بحث داخل البيانات")
-view_df = df.copy()
-
-if search:
-    view_df = view_df[
-        view_df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
-    ]
-
-st.dataframe(view_df, use_container_width=True)
+# ---------- عرض ----------
+st.dataframe(df, use_container_width=True)
 
 st.divider()
 
-# ===== أدوات =====
-col1,col2,col3 = st.columns(3)
+# ====================================================
+# الأدوات
+# ====================================================
 
-with col1:
-    if st.button("🧹 حذف الصفوف المكررة"):
-        save_history()
+tabs = st.tabs(["🧹 تنظيف", "🔁 استبدال", "🧠 تشابه إملائي", "↩️ تراجع"])
+
+# --------- تنظيف ---------
+with tabs[0]:
+    st.subheader("حذف التكرار")
+    if st.button("تنفيذ حذف التكرار"):
+        save()
         st.session_state.df.drop_duplicates(inplace=True)
-        st.success("تم حذف التكرار")
+        st.success("تم حذف الصفوف المكررة")
         st.rerun()
 
-with col2:
-    columns_to_delete = st.multiselect("اختر أعمدة لحذفها", df.columns)
-    if st.button("حذف الأعمدة"):
-        if columns_to_delete:
-            save_history()
-            st.session_state.df.drop(columns=columns_to_delete, inplace=True)
-            st.success("تم حذف الأعمدة")
+# --------- استبدال ---------
+with tabs[1]:
+    st.subheader("استبدال داخل عمود")
+
+    column = st.selectbox("اختر العمود", df.columns)
+    old_value = st.text_input("القيمة القديمة")
+    new_value = st.text_input("القيمة الجديدة")
+
+    if st.button("تنفيذ الاستبدال"):
+        if old_value != "":
+            save()
+            st.session_state.df[column] = st.session_state.df[column].astype(str).str.replace(old_value, new_value, regex=False)
+            st.success("تم الاستبدال في كامل العمود")
             st.rerun()
         else:
-            st.warning("اختر عموداً أولاً")
+            st.warning("اكتب القيمة القديمة أولاً")
 
-with col3:
-    if st.button("↩️ تراجع"):
+# --------- التشابه الإملائي ---------
+with tabs[2]:
+    st.subheader("توحيد الكلمات المتشابهة")
+
+    sim_col = st.selectbox("اختر العمود المراد توحيده", df.columns)
+
+    threshold = st.slider("درجة التشابه", 70, 100, 85)
+
+    if st.button("فحص التشابه"):
+        values = df[sim_col].dropna().astype(str).unique().tolist()
+        groups = {}
+
+        for val in values:
+            match = process.extractOne(val, groups.keys(), scorer=fuzz.ratio)
+            if match and match[1] >= threshold:
+                groups[match[0]].append(val)
+            else:
+                groups[val] = [val]
+
+        st.write("المجموعات المكتشفة:")
+        for k,v in groups.items():
+            st.write(f"**{k}** ← {v}")
+
+        if st.button("تطبيق التوحيد"):
+            save()
+            mapping={}
+            for main,vars in groups.items():
+                for x in vars:
+                    mapping[x]=main
+            st.session_state.df[sim_col]=st.session_state.df[sim_col].astype(str).replace(mapping)
+            st.success("تم توحيد القيم المتشابهة")
+            st.rerun()
+
+# --------- التراجع ---------
+with tabs[3]:
+    if st.button("العودة لآخر خطوة"):
         if st.session_state.history:
             st.session_state.df = st.session_state.history.pop()
             st.rerun()
@@ -120,7 +160,7 @@ with col3:
 
 st.divider()
 
-# ===== تحميل =====
+# ---------- تحميل ----------
 output = io.BytesIO()
 with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
     st.session_state.df.to_excel(writer, index=False)
