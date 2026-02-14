@@ -230,5 +230,46 @@ with pd.ExcelWriter(output,engine="xlsxwriter") as writer:
 
 st.download_button("⬇️ تحميل الملف بعد التنظيف",output.getvalue(),"cleaned_data.xlsx")
 
-st.divider()
-st.markdown("© 2026 منصة تنظيف البيانات العربية - جميع الحقوق محفوظة")
+# =====================================================
+# Footer + مشاركة الموقع
+# =====================================================
+
+st.markdown("---")
+
+APP_URL = "https://my-data-p9zv-anl.streamlit.app"
+
+st.markdown(f"""
+<div style="text-align:center; padding:25px">
+
+<h3>💙 أعجبك الموقع؟ ادعمنا بنشره</h3>
+<p>مشاركتك تساعد الآخرين في تنظيف بياناتهم بسهولة</p>
+
+<a href="https://wa.me/?text=جرب هذه الأداة المجانية لتنظيف ملفات الإكسل {APP_URL}" target="_blank">
+<img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="55">
+</a>
+
+&nbsp;&nbsp;&nbsp;
+
+<a href="https://www.instagram.com/" target="_blank">
+<img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" width="55">
+</a>
+
+&nbsp;&nbsp;&nbsp;
+
+<a href="https://www.tiktok.com/" target="_blank">
+<img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" width="55">
+</a>
+
+<br><br>
+
+<p style="font-size:14px; color:#94a3b8">
+يمكنك مشاركة الموقع مباشرة عبر واتساب بالضغط على الأيقونة ↑
+</p>
+
+<p style="font-size:12px; color:#64748b">
+© 2026 منصة تنظيف البيانات العربية<br>
+صممت لمساعدة الباحثين والشركات في تنظيم البيانات قبل رفعها إلى Google و Excel و CRM
+</p>
+
+</div>
+""", unsafe_allow_html=True)
