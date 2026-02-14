@@ -1,20 +1,14 @@
 # =====================================
-# Smart Excel Cleaner - Google Cloud Version
-# تطبيق تنظيف وتحليل ملفات Excel و CSV
+# Smart Excel Cleaner - Stable Version
 # =====================================
 
 import streamlit as st
 import pandas as pd
 import io
 
-# إعدادات الصفحة
-st.set_page_config(
-    page_title="منصة تنظيف ملفات الإكسل",
-    page_icon="📊",
-    layout="wide"
-)
+st.set_page_config(page_title="تنظيف ملفات الإكسل", page_icon="📊", layout="wide")
 
-# تصميم خفيف وسريع مناسب لـ Cloud Run
+# ===== تصميم =====
 st.markdown("""
 <style>
 html, body, [data-testid="stAppViewContainer"]{
@@ -22,7 +16,7 @@ html, body, [data-testid="stAppViewContainer"]{
     background:#0f172a;
     color:white;
 }
-h1,h2,h3{ text-align:center; }
+h1{text-align:center;}
 
 .stButton>button{
     background:#2563eb;
@@ -31,7 +25,6 @@ h1,h2,h3{ text-align:center; }
     height:45px;
     font-weight:bold;
 }
-
 .stDownloadButton>button{
     background:#16a34a !important;
     color:white !important;
@@ -41,71 +34,96 @@ h1,h2,h3{ text-align:center; }
 </style>
 """, unsafe_allow_html=True)
 
-# عنوان الصفحة
 st.title("📊 منصة تنظيف وتحليل ملفات الإكسل")
-st.write("ارفع ملف Excel أو CSV وسيتم تحليله وتنظيفه مباشرة")
 
-# رفع الملف
-uploaded_file = st.file_uploader("📂 ارفع ملفك", type=["xlsx", "csv"])
+# ===== ذاكرة التطبيق (المهم جداً) =====
+if "df" not in st.session_state:
+    st.session_state.df = None
 
-if uploaded_file is None:
-    st.info("⬆️ بانتظار رفع الملف")
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+def save_history():
+    if st.session_state.df is not None:
+        st.session_state.history.append(st.session_state.df.copy())
+        if len(st.session_state.history) > 15:
+            st.session_state.history.pop(0)
+
+# ===== رفع الملف =====
+uploaded_file = st.file_uploader("📂 ارفع ملف Excel أو CSV", type=["xlsx","csv"])
+
+if uploaded_file:
+    if st.session_state.df is None:
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                st.session_state.df = pd.read_csv(uploaded_file)
+            else:
+                st.session_state.df = pd.read_excel(uploaded_file)
+        except:
+            st.error("الملف غير صالح")
+            st.stop()
+
+if st.session_state.df is None:
+    st.info("⬆️ ارفع ملف للبدء")
     st.stop()
 
-# قراءة الملف
-try:
-    if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file)
-except Exception:
-    st.error("فشل قراءة الملف — تأكد أن الملف سليم")
-    st.stop()
+df = st.session_state.df
 
-# إحصائيات
-c1, c2 = st.columns(2)
+# ===== احصائيات =====
+c1,c2 = st.columns(2)
 c1.metric("عدد الصفوف", df.shape[0])
 c2.metric("عدد الأعمدة", df.shape[1])
 
 st.divider()
 
-# البحث داخل البيانات
+# ===== البحث =====
 search = st.text_input("🔍 بحث داخل البيانات")
 view_df = df.copy()
 
 if search:
     view_df = view_df[
-        view_df.apply(
-            lambda r: r.astype(str).str.contains(search, case=False).any(),
-            axis=1
-        )
+        view_df.apply(lambda r: r.astype(str).str.contains(search, case=False).any(), axis=1)
     ]
 
 st.dataframe(view_df, use_container_width=True)
 
 st.divider()
 
-# حذف الصفوف المكررة
-if st.button("🧹 حذف الصفوف المكررة"):
-    df = df.drop_duplicates()
-    st.success("تم حذف التكرار")
+# ===== أدوات =====
+col1,col2,col3 = st.columns(3)
 
-# حذف أعمدة محددة
-cols = st.multiselect("اختر أعمدة لحذفها", df.columns)
+with col1:
+    if st.button("🧹 حذف الصفوف المكررة"):
+        save_history()
+        st.session_state.df.drop_duplicates(inplace=True)
+        st.success("تم حذف التكرار")
+        st.rerun()
 
-if st.button("حذف الأعمدة المحددة"):
-    if len(cols) > 0:
-        df = df.drop(columns=cols)
-        st.success("تم حذف الأعمدة")
-    else:
-        st.warning("اختر عموداً أولاً")
+with col2:
+    columns_to_delete = st.multiselect("اختر أعمدة لحذفها", df.columns)
+    if st.button("حذف الأعمدة"):
+        if columns_to_delete:
+            save_history()
+            st.session_state.df.drop(columns=columns_to_delete, inplace=True)
+            st.success("تم حذف الأعمدة")
+            st.rerun()
+        else:
+            st.warning("اختر عموداً أولاً")
+
+with col3:
+    if st.button("↩️ تراجع"):
+        if st.session_state.history:
+            st.session_state.df = st.session_state.history.pop()
+            st.rerun()
+        else:
+            st.warning("لا توجد خطوات سابقة")
 
 st.divider()
 
-# تصدير الملف بعد التنظيف
+# ===== تحميل =====
 output = io.BytesIO()
-with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-    df.to_excel(writer, index=False)
+with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+    st.session_state.df.to_excel(writer, index=False)
 
 st.download_button(
     label="⬇️ تحميل الملف بعد التنظيف",
@@ -113,5 +131,3 @@ st.download_button(
     file_name="cleaned_data.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
-
-st.caption("Cloud Version 1.0")
