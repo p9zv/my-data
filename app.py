@@ -8,9 +8,13 @@ import pandas as pd
 import io
 import re
 from rapidfuzz import fuzz
+st.set_page_config(
+    page_title="محلل ومنظف ملفات اكسل",
+    page_icon="📊",
+    layout="wide"
+)
 
-st.set_page_config(page_title="منصة تنظيف البيانات", page_icon="📊", layout="wide")
-
+st.markdown('<meta name="google-site-verification" content="kdYmC-Gk08HXb0lYrjANPExaGbPf9zbnQt4OklBDVew" />', unsafe_allow_html=True)
 # ================= CSS =================
 st.markdown("""
 <style>
