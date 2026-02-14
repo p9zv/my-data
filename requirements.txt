@@ -1,5 +1,10 @@
 streamlit
 pandas
+numpy
 openpyxl
 rapidfuzz
 xlsxwriter
+matplotlib
+scikit-learn
+plotly
+watchdog
