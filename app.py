@@ -14,6 +14,20 @@ st.set_page_config(
     layout="wide"
 )
 
+# ===== Google Analytics =====
+GA_ID = "G-7GJEC0MQRV"
+
+st.markdown(f"""
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){{dataLayer.push(arguments);}}
+gtag('js', new Date());
+gtag('config', '{GA_ID}');
+</script>
+""", unsafe_allow_html=True)
+
 st.markdown('<meta name="google-site-verification" content="kdYmC-Gk08HXb0lYrjANPExaGbPf9zbnQt4OklBDVew" />', unsafe_allow_html=True)
 # ================= CSS =================
 st.markdown("""
