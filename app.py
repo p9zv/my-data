@@ -228,21 +228,23 @@ output=io.BytesIO()
 with pd.ExcelWriter(output,engine="xlsxwriter") as writer:
     st.session_state.df.to_excel(writer,index=False)
 
-st.download_button("⬇️ تحميل الملف بعد التنظيف",output.getvalue(),"cleaned_data.xlsx")
-
-# =====================================================
-# Footer + مشاركة الموقع
+st.download_button("⬇️ تحميل الملف بعد التنظيف",output.getvalue(),"
+                   # =====================================================
+# Footer + مشاركة + تواصل مع المطور
 # =====================================================
 
 st.markdown("---")
 
 APP_URL = "https://my-data-p9zv-anl.streamlit.app"
+EMAIL = "a7traf92@gmail.com"
 
 st.markdown(f"""
-<div style="text-align:center; padding:25px">
+<div style="text-align:center; padding:30px">
 
-<h3>💙 أعجبك الموقع؟ ادعمنا بنشره</h3>
-<p>مشاركتك تساعد الآخرين في تنظيف بياناتهم بسهولة</p>
+<h2>💙 أعجبك الموقع؟ ساعدنا بنشره</h2>
+<p style="color:#94a3b8">مشاركتك تساعد الآخرين في تنظيف بياناتهم بسهولة</p>
+
+<br>
 
 <a href="https://wa.me/?text=جرب هذه الأداة المجانية لتنظيف ملفات الإكسل {APP_URL}" target="_blank">
 <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="55">
@@ -260,15 +262,31 @@ st.markdown(f"""
 <img src="https://cdn-icons-png.flaticon.com/512/3046/3046121.png" width="55">
 </a>
 
-<br><br>
+<br><br><br>
 
-<p style="font-size:14px; color:#94a3b8">
-يمكنك مشاركة الموقع مباشرة عبر واتساب بالضغط على الأيقونة ↑
-</p>
+<h3>📩 تواصل مع المطور</h3>
 
-<p style="font-size:12px; color:#64748b">
+<a href="mailto:{EMAIL}?subject=استفسار حول منصة تنظيف البيانات&body=مرحباً، أرغب بالاستفسار عن الموقع">
+<button style="
+background: linear-gradient(90deg,#f59e0b,#f97316);
+border:none;
+color:white;
+padding:14px 28px;
+border-radius:14px;
+font-size:16px;
+cursor:pointer;
+">
+راسل المطور
+</button>
+</a>
+
+<p style="margin-top:10px; color:#94a3b8">{EMAIL}</p>
+
+<br>
+
+<p style="font-size:13px; color:#64748b">
 © 2026 منصة تنظيف البيانات العربية<br>
-صممت لمساعدة الباحثين والشركات في تنظيم البيانات قبل رفعها إلى Google و Excel و CRM
+تم تطوير هذه الأداة لمساعدة الباحثين والشركات على توحيد البيانات قبل رفعها إلى Google و Excel و CRM
 </p>
 
 </div>
