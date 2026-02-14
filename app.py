@@ -228,7 +228,12 @@ output=io.BytesIO()
 with pd.ExcelWriter(output,engine="xlsxwriter") as writer:
     st.session_state.df.to_excel(writer,index=False)
 
-st.download_button("⬇️ تحميل الملف بعد التنظيف",output.getvalue(),"
+st.download_button(
+    label="⬇️ تحميل الملف بعد التنظيف",
+    data=output.getvalue(),
+    file_name="cleaned_data.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
                    # =====================================================
 # Footer + مشاركة + تواصل مع المطور
 # =====================================================
