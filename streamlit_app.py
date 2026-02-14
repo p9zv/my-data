@@ -5,6 +5,22 @@ from rapidfuzz import process, fuzz
 import streamlit.components.v1 as components
 
 # ======================================================
+# كود إثبات الملكية لجوجل (Google Analytics ID)
+# ======================================================
+# ضع رقم الـ G الخاص بك هنا بدلاً من G-XXXXXXXXXX
+GA_ID = "G-BG60LYEZFM" 
+
+components.html(f"""
+    <script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){{dataLayer.push(arguments);}}
+        gtag('js', new Date());
+        gtag('config', '{GA_ID}');
+    </script>
+""", height=0)
+
+# ======================================================
 # 1. إعدادات الصفحة وتحسين محركات البحث (SEO)
 # ======================================================
 st.set_page_config(
@@ -32,7 +48,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ======================================================
-# 2. CSS التصميم (تحديث الألوان لتناسب الواجهة الفخمة)
+# 2. CSS التصميم
 # ======================================================
 st.markdown("""
 <style>
@@ -61,12 +77,15 @@ p,label,span{ text-align:right; color:#94a3b8 !important; }
     color:white; border-radius:12px; height:50px; width:100%; border:none; font-weight:bold;
 }
 
+.stButton>button:hover{
+    background: linear-gradient(90deg, #0284c7, #1d4ed8);
+}
+
 .stDownloadButton>button{
     background: linear-gradient(90deg, #22c55e, #16a34a) !important;
     color:white !important; border-radius:15px !important; height:55px !important; width:100% !important;
 }
 
-/* الكلمات المفتاحية المخفية لتحسين السيو */
 .seo-text { visibility: hidden; height: 0; overflow: hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -93,11 +112,9 @@ uploaded_file = st.file_uploader("📂 ارفع ملف Excel أو CSV للبدء
 if uploaded_file is None:
     st.session_state.df = None
     st.info("⬆️ الرجاء رفع ملف بيانات لبدء عملية التحليل")
-    # نص سيو لجوجل
     st.markdown("<div class='seo-text'>تنظيف إكسل، حذف مكررات، تحليل بيانات محاسبية، CSV cleaner, Excel Online tool</div>", unsafe_allow_html=True)
     st.stop()
 
-# تحميل الملف
 file_id = uploaded_file.name + str(uploaded_file.size)
 if st.session_state.last_file != file_id:
     st.session_state.df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
@@ -106,14 +123,12 @@ if st.session_state.last_file != file_id:
 
 df = st.session_state.df
 
-# عرض العدادات
 c1, c2 = st.columns(2)
 with c1: st.markdown(f"<div class='metric-box'><h3>عدد الصفوف</h3><h2>{df.shape[0]}</h2></div>", unsafe_allow_html=True)
 with c2: st.markdown(f"<div class='metric-box'><h3>عدد الأعمدة</h3><h2>{df.shape[1]}</h2></div>", unsafe_allow_html=True)
 
 st.divider()
 
-# البحث والجدول
 search = st.text_input("🔍 بحث فوري داخل الجدول (مثال: اسم العميل، رقم الهاتف)")
 view_df = df.copy()
 if search:
@@ -121,7 +136,6 @@ if search:
 
 st.dataframe(view_df, use_container_width=True, hide_index=True)
 
-# زر التراجع
 col_l, col_m, col_r = st.columns([2,1,2])
 with col_m:
     if st.button("↩️ تراجع"):
@@ -172,7 +186,7 @@ with t2:
 st.divider()
 
 # ======================================================
-# 6. التصدير وأزرار النشر (لزيادة الانتشار)
+# 6. التصدير وأزرار النشر
 # ======================================================
 l, c, r = st.columns([2,3,2])
 with c:
@@ -181,7 +195,8 @@ with c:
     st.download_button("⬇️ تحميل الملف النظيف (Excel)", buffer.getvalue(), "cleaned_data.xlsx", use_container_width=True)
 
 st.markdown("<br><h3 style='font-size:1.2rem;'>📢 ساعدنا في نشر الأداة</h3>", unsafe_allow_html=True)
-app_url = "https://your-app-link.streamlit.app" # استبدله برابط موقعك بعد الرفعه
+# استبدل الرابط أدناه برابط موقعك الحقيقي
+app_url = "https://my-data-p9zv-anl.streamlit.app" 
 st.markdown(f"""
     <div style="text-align:center;">
         <a href="https://api.whatsapp.com/send?text=أداة رهيبة لتنظيف ملفات الإكسل مجاناً: {app_url}" target="_blank">
@@ -193,4 +208,4 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<p style='text-align:center; font-size:0.8rem; color:#4b5563;'>جميع الحقوق محفوظة © 2024 - منصة تنظيف البيانات</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; font-size:0.8rem; color:#4b5563;'>جميع الحقوق محفوظة © 2026 - منصة تنظيف البيانات</p>", unsafe_allow_html=True)
