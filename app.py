@@ -15,20 +15,12 @@ st.set_page_config(
 )
 
 # ===== Google Analytics =====
-GA_ID = "G-7GJEC0MQRV"
-
-st.markdown(f"""
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){{dataLayer.push(arguments);}}
-gtag('js', new Date());
-gtag('config', '{GA_ID}');
-</script>
+st.markdown("""
+<head>
+<meta name="google-site-verification" content="kdYmC-Gk08HXb0lYrjANPExaGbPf9zbnQt4OklBDVew" />
+<meta name="description" content="أداة مجانية لتنظيف وتوحيد البيانات العربية في ملفات Excel و CSV وإزالة التكرارات وتصحيح الأسماء المتشابهة تلقائياً أونلاين بدون برامج">
+</head>
 """, unsafe_allow_html=True)
-
-st.markdown('<meta name="google-site-verification" content="kdYmC-Gk08HXb0lYrjANPExaGbPf9zbnQt4OklBDVew" />', unsafe_allow_html=True)
 # ================= CSS =================
 st.markdown("""
 <style>
