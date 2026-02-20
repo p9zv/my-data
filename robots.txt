@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://p9zv.github.io/my-data/sitemap.xml
