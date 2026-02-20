@@ -13,7 +13,8 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
-st.markdown("""
+st.components.v1.html("""
+<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-9WR2CL9YRK"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
@@ -21,7 +22,7 @@ function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
 gtag('config', 'G-9WR2CL9YRK');
 </script>
-""", unsafe_allow_html=True)
+""", height=0)
 # ===== Google Analytics =====
 
 st.markdown("""
