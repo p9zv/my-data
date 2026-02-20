@@ -1,5 +1,5 @@
-streamlit==1.31.1
+streamlit==1.29.0
 pandas==2.0.3
 openpyxl==3.1.2
 xlsxwriter==3.1.9
-rapidfuzz==3.6.1
+rapidfuzz==3.5.2
