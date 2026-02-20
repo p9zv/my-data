@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- الصفحة الرئيسية -->
+
   <url>
     <loc>https://p9zv.github.io/my-data/</loc>
     <lastmod>2026-02-20</lastmod>
@@ -8,11 +8,4 @@
     <priority>1.00</priority>
   </url>
 
-  <!-- رابط خارجي إذا تريد تضمينه -->
-  <url>
-    <loc>https://arabic-excel-cleaner.streamlit.app/</loc>
-    <lastmod>2026-02-20</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
 </urlset>
