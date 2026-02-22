@@ -1,16 +1,19 @@
-<!-- rebuild -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta name="google-site-verification" content="EEL71900nPsGfxJsbOPvM-UwPkns6xlUTnFl4tW4xPk" />
+
 <meta charset="UTF-8">
+<meta name="google-site-verification" content="EEL71900nPsGfxJsbOPvM-UwPkns6xlUTnFl4tW4xPk" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>تنظيف بيانات Excel العربية أونلاين | Arabic Excel Data Cleaner</title>
 
 <meta name="description" content="أداة مجانية لتنظيف وتوحيد بيانات ملفات Excel و CSV العربية أونلاين. إزالة التكرارات، توحيد الأسماء المتشابهة، وتحليل البيانات بسهولة بدون تحميل برامج.">
 
 <meta name="keywords" content="تنظيف بيانات excel, تحليل بيانات, تنظيف csv, data cleaning tool, توحيد الاسماء العربية, اصلاح البيانات">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- مهم جداً لمنع مشاكل المسارات -->
+<base href="./">
 
 <style>
 body{
@@ -25,9 +28,18 @@ body{
     max-width:850px;
     margin:auto;
 }
-h1{font-size:34px;margin-bottom:20px;}
-h2{margin-top:35px;color:#93c5fd;}
-p{color:#e5e7eb;font-size:18px;}
+h1{
+    font-size:34px;
+    margin-bottom:20px;
+}
+h2{
+    margin-top:35px;
+    color:#93c5fd;
+}
+p{
+    color:#e5e7eb;
+    font-size:18px;
+}
 .button{
     display:inline-block;
     margin-top:35px;
@@ -38,8 +50,12 @@ p{color:#e5e7eb;font-size:18px;}
     border-radius:14px;
     font-size:20px;
     font-weight:bold;
+    transition:.3s;
 }
-.button:hover{background:#22c55e;}
+.button:hover{
+    background:#22c55e;
+    transform:scale(1.05);
+}
 .features{
     text-align:right;
     margin-top:20px;
@@ -51,9 +67,11 @@ footer{
     color:#94a3b8;
 }
 </style>
+
 </head>
 
 <body>
+
 <div class="container">
 
 <h1>أداة تنظيف وتحليل بيانات Excel العربية</h1>
@@ -78,7 +96,7 @@ footer{
 
 <p>اضغط الزر لفتح الأداة مباشرة واستخدامها مجاناً بدون تسجيل.</p>
 
-<a class="button" href="app.html">
+<a class="button" id="startTool" href="./app.html" rel="noopener">
 فتح أداة تنظيف البيانات
 </a>
 
@@ -87,7 +105,18 @@ footer{
 </footer>
 
 </div>
+
+<!-- سكربت لضمان الانتقال في جميع المتصفحات -->
+<script>
+document.getElementById("startTool").addEventListener("click", function(e){
+    e.preventDefault();
+    window.location.assign("./app.html");
+
+    setTimeout(function(){
+        window.open("./app.html", "_self");
+    }, 150);
+});
+</script>
+
 </body>
 </html>
-<!-- update -->
-
