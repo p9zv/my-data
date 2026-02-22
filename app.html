@@ -1,0 +1,317 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+<title>لوحة تنظيف البيانات العربية</title>
+
+<!-- خط عربي احترافي -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- أيقونات -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+
+/* ===== Reset مهم جداً للآيفون ===== */
+{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+input,button,select{
+    appearance:none;
+    -webkit-appearance:none;
+    font-family:'Cairo',sans-serif;
+}
+
+/ الخلفية /
+body{
+    margin:0;
+    background:linear-gradient(180deg,#020617,#020617 40%,#020617);
+    font-family:'Cairo',sans-serif;
+    color:#e2e8f0;
+}
+
+/ الحاوية /
+.container{
+    padding:18px;
+    max-width:900px;
+    margin:auto;
+}
+
+/ العنوان /
+.header{
+    text-align:center;
+    margin-bottom:18px;
+}
+.header h1{
+    font-size:24px;
+    font-weight:700;
+    line-height:1.5;
+}
+.header i{
+    color:#22c55e;
+    margin-left:6px;
+}
+
+/ الكروت /
+.card{
+    background:#0f172a;
+    border-radius:18px;
+    padding:16px;
+    margin-top:14px;
+    border:1px solid #1e293b;
+    box-shadow:0 12px 30px rgba(0,0,0,.45);
+}
+
+/ الحقول /
+label{
+    font-size:14px;
+    color:#94a3b8;
+}
+
+input,select{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    border-radius:12px;
+    border:1px solid #334155;
+    background:#020617;
+    color:#fff;
+    font-size:14px;
+}
+
+/ الأزرار /
+button{
+    width:100%;
+    padding:13px;
+    margin-top:10px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    color:white;
+    font-size:15px;
+    font-weight:600;
+}
+
+button:active{
+    transform:scale(.97);
+}
+
+/ الجدول /
+.table-box{
+    overflow:auto;
+    max-height:55vh;
+    border-radius:14px;
+    margin-top:12px;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:12px;
+    min-width:600px;
+}
+
+th,td{
+    border:1px solid #334155;
+    padding:6px;
+    text-align:center;
+}
+
+th{
+    background:#1e293b;
+    position:sticky;
+    top:0;
+}
+
+.hidden{display:none;}
+
+.info{
+    text-align:center;
+    color:#94a3b8;
+    margin-top:8px;
+}
+
+.success{
+    text-align:center;
+    color:#22c55e;
+    margin-top:10px;
+    font-weight:600;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h1><i class="fa-solid fa-chart-column"></i> أداة تنظيف وتوحيد البيانات العربية</h1>
+</div>
+
+<!-- رفع الملف -->
+<div class="card">
+<label><i class="fa-solid fa-file-arrow-up"></i> رفع ملف CSV أو Excel</label>
+<input type="file" id="fileInput" accept=".csv,.xlsx">
+<div id="fileInfo" class="info"></div>
+</div>
+
+<!-- الأدوات -->
+<div class="card hidden" id="tools">
+
+<label><i class="fa-solid fa-magnifying-glass"></i> البحث</label>
+<input id="searchInput" placeholder="ابحث داخل البيانات">
+
+<label><i class="fa-solid fa-pen"></i> استبدال القيم</label>
+<select id="columnSelect"></select>
+<input id="oldValue" placeholder="القيمة القديمة">
+<input id="newValue" placeholder="القيمة الجديدة">
+
+<button onclick="replaceValue()"><i class="fa-solid fa-repeat"></i> تنفيذ الاستبدال</button>
+<button onclick="normalizeColumn()"><i class="fa-solid fa-wand-magic-sparkles"></i> توحيد النصوص العربية</button>
+<button id="downloadBtn" class="hidden"><i class="fa-solid fa-download"></i> تحميل الملف</button>
+
+<div id="msg" class="success"></div>
+
+</div>
+
+<!-- الجدول -->
+<div class="card hidden" id="tableCard">
+<div class="table-box" id="tableContainer"></div>
+</div>
+
+</div>
+
+<script>
+
+let data=[], headers=[];
+
+/ توحيد عربي /
+function normalizeArabic(text){
+    if(!text) return "";
+    return text.toString()
+    .replace(/[\u0617-\u061A\u064B-\u0652]/g,"")
+    .replace(/[إأآ]/g,"ا")
+    .replace(/ى/g,"ي")
+    .replace(/ة/g,"ه")
+    .replace(/ؤ/g,"و")
+    .replace(/ئ/g,"ي")
+    .replace(/[^\w\s]/g,"")
+    .trim();
+}
+
+/ رفع الملف /
+document.getElementById("fileInput").addEventListener("change",e=>{
+const file=e.target.files[0];
+const reader=new FileReader();
+
+if(file.name.endsWith(".csv")){
+reader.onload=x=>loadCSV(x.target.result);
+reader.readAsText(file);
+}else{
+reader.onload=x=>{
+const wb=XLSX.read(x.target.result,{type:'binary'});
+const sheet=wb.Sheets[wb.SheetNames[0]];
+loadData(XLSX.utils.sheet_to_json(sheet,{header:1}));
+};
+reader.readAsBinaryString(file);
+}
+
+document.getElementById("fileInfo").innerText="الملف: "+file.name;
+});
+
+/ CSV /
+function loadCSV(text){
+const rows=text.split("\n").map(r=>r.split(","));
+loadData(rows);
+}
+
+/ تحميل البيانات /
+function loadData(rows){
+headers=rows[0];
+data=rows.slice(1);
+
+updateColumns();
+renderTable(data);
+
+document.getElementById("tools").classList.remove("hidden");
+document.getElementById("tableCard").classList.remove("hidden");
+}
+
+/ جدول /
+function renderTable(rows){
+let html="<table><tr>";
+headers.forEach(h=>html+="<th>"+h+"</th>");
+html+="</tr>";
+
+rows.forEach(r=>{
+html+="<tr>";
+headers.forEach((_,i)=>{
+html+="<td>"+(r[i]||"")+"</td>";
+});
+html+="</tr>";
+});
+
+html+="</table>";
+document.getElementById("tableContainer").innerHTML=html;
+}
+
+/ أعمدة /
+function updateColumns(){
+const s=document.getElementById("columnSelect");
+s.innerHTML="";
+headers.forEach((h,i)=>{
+let o=document.createElement("option");
+o.value=i;o.text=h;
+s.appendChild(o);
+});
+}
+
+/ استبدال /
+function replaceValue(){
+const col=document.getElementById("columnSelect").value;
+const oldv=document.getElementById("oldValue").value;
+const newv=document.getElementById("newValue").value;
+
+data=data.map(r=>{
+if(r[col]==oldv) r[col]=newv;
+return r;
+});
+
+renderTable(data);
+document.getElementById("downloadBtn").classList.remove("hidden");
+document.getElementById("msg").innerText="تم التعديل بنجاح";
+}
+
+/ توحيد /
+function normalizeColumn(){
+const col=document.getElementById("columnSelect").value;
+data=data.map(r=>{
+r[col]=normalizeArabic(r[col]);
+return r;
+});
+renderTable(data);
+document.getElementById("downloadBtn").classList.remove("hidden");
+document.getElementById("msg").innerText="تم توحيد النصوص";
+}
+
+/ تحميل */
+document.getElementById("downloadBtn").onclick=function(){
+const ws=XLSX.utils.aoa_to_sheet([headers,...data]);
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,"cleaned");
+XLSX.writeFile(wb,"cleaned.xlsx");
+};
+
+</script>
+
+</body>
+</html>
