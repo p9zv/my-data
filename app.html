@@ -1,21 +1,26 @@
+}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>أداة تنظيف البيانات العربية</title>
-
-<!-- منع أرشفة الصفحة (مهم حتى لا تنافس الصفحة الرئيسية في SEO) -->
 <meta name="robots" content="noindex, nofollow">
+
+<title>لوحة تنظيف البيانات العربية</title>
+
+<!-- أيقونات احترافية -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
 <!-- مكتبة قراءة Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
+
+/* ===== الأساس ===== /
 body{
     margin:0;
-    font-family:Tahoma, Arial;
+    font-family:Tahoma,Arial;
     background:#020617;
     color:#e5e7eb;
 }
@@ -23,79 +28,108 @@ body{
 .container{
     max-width:1100px;
     margin:auto;
-    padding:40px 20px;
+    padding:25px;
 }
 
-h1{
+/ العنوان /
+.title{
     text-align:center;
-    margin-bottom:30px;
+    margin-bottom:20px;
+}
+.title i{
+    color:#22c55e;
+    margin-left:6px;
 }
 
-.upload-box{
+/ الكروت /
+.card{
     background:#0f172a;
-    padding:30px;
-    border-radius:16px;
-    text-align:center;
     border:1px solid #1e293b;
+    border-radius:18px;
+    padding:20px;
+    margin-top:18px;
+    box-shadow:0 0 25px rgba(0,0,0,.4);
 }
 
-input, select{
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #334155;
-    background:#1e293b;
-    color:white;
-    margin:5px;
-}
-
-button{
-    padding:10px 18px;
+/ الحقول /
+input,select{
+    width:100%;
+    padding:11px;
+    margin-top:8px;
     border-radius:10px;
+    border:1px solid #334155;
+    background:#020617;
+    color:white;
+    font-size:14px;
+}
+
+/ الأزرار /
+button{
+    width:100%;
+    padding:12px;
+    margin-top:12px;
     border:none;
+    border-radius:12px;
     background:linear-gradient(90deg,#2563eb,#1d4ed8);
     color:white;
-    cursor:pointer;
-    margin:5px;
     font-weight:bold;
+    cursor:pointer;
     transition:.2s;
 }
+button:hover{ transform:scale(1.03); }
 
-button:hover{
-    transform:scale(1.05);
-}
-
-.table-container{
-    margin-top:30px;
+/ الجدول /
+.table-wrapper{
+    margin-top:18px;
+    height:55vh;
     overflow:auto;
+    border-radius:14px;
+    border:1px solid #1e293b;
 }
 
 table{
     border-collapse:collapse;
     width:100%;
+    font-size:13px;
 }
 
 th,td{
     border:1px solid #334155;
-    padding:8px;
+    padding:6px;
     text-align:center;
 }
 
 th{
     background:#1e293b;
+    position:sticky;
+    top:0;
 }
 
-.features{
-    margin-top:30px;
-    background:#0f172a;
-    padding:20px;
-    border-radius:12px;
-    display:none;
+/ scrollbar /
+.table-wrapper::-webkit-scrollbar{
+    width:8px;height:8px;
+}
+.table-wrapper::-webkit-scrollbar-thumb{
+    background:#334155;
+    border-radius:10px;
+}
+
+/ معلومات الملف /
+.fileinfo{
+    color:#94a3b8;
+    margin-top:8px;
+    text-align:center;
 }
 
 .success{
     color:#22c55e;
+    text-align:center;
     margin-top:10px;
+    font-weight:bold;
 }
+
+.hidden{ display:none; }
+
 </style>
 </head>
 
@@ -103,135 +137,190 @@ th{
 
 <div class="container">
 
-<h1>📊 أداة تنظيف وتوحيد البيانات العربية</h1>
-
-<div class="upload-box">
-    <p>ارفع ملف CSV أو Excel لبدء التنظيف</p>
-    <input type="file" id="fileInput" accept=".csv,.xlsx">
+<div class="title">
+<h1><i class="fa-solid fa-chart-column"></i> أداة تنظيف وتوحيد البيانات العربية</h1>
 </div>
 
-<div class="features" id="toolsSection">
-    <h3>أدوات التنظيف</h3>
-
-    <input type="text" id="searchInput" placeholder="بحث داخل الجدول">
-
-    <br>
-
-    <select id="columnSelect"></select>
-    <input type="text" id="oldValue" placeholder="القيمة القديمة">
-    <input type="text" id="newValue" placeholder="القيمة الجديدة">
-
-    <br>
-
-    <button onclick="replaceValue()">تنفيذ الاستبدال</button>
-    <button onclick="downloadFile()">⬇ تحميل الملف بعد التنظيف</button>
-
-    <div class="success" id="successMsg"></div>
+<!-- رفع الملف -->
+<div class="card">
+<label><i class="fa-solid fa-file-upload"></i> ارفع ملف Excel أو CSV</label>
+<input type="file" id="fileInput" accept=".csv,.xlsx">
+<div class="fileinfo" id="fileInfo"></div>
 </div>
 
-<div class="table-container" id="tableContainer"></div>
+<!-- أدوات -->
+<div class="card hidden" id="tools">
+
+<label><i class="fa-solid fa-magnifying-glass"></i> البحث داخل الجدول</label>
+<input type="text" id="searchInput" placeholder="اكتب كلمة...">
+
+<label><i class="fa-solid fa-pen"></i> استبدال القيم</label>
+<select id="columnSelect"></select>
+<input type="text" id="oldValue" placeholder="القيمة القديمة">
+<input type="text" id="newValue" placeholder="القيمة الجديدة">
+
+<button onclick="replaceValue()"><i class="fa-solid fa-arrows-rotate"></i> تنفيذ الاستبدال</button>
+
+<button id="normalizeBtn"><i class="fa-solid fa-wand-magic-sparkles"></i> توحيد النصوص العربية</button>
+
+<button id="downloadBtn" class="hidden"><i class="fa-solid fa-download"></i> تحميل الملف بعد التنظيف</button>
+
+<div class="success" id="msg"></div>
+
+</div>
+
+<!-- الجدول -->
+<div class="card hidden" id="tableCard">
+<div class="table-wrapper" id="tableContainer"></div>
+</div>
 
 </div>
 
 <script>
-let data = [];
-let headers = [];
-let fileType = "";
+let data=[], headers=[];
+let modified=false;
 
-document.getElementById('fileInput').addEventListener('change', function(e){
-    const file = e.target.files[0];
-    fileType = file.name.split('.').pop().toLowerCase();
+/ ======= محرك العربية (من كودك البايثون) ======= /
+function normalizeArabic(text){
+    if(!text) return "";
+    text=text.toString();
 
-    const reader = new FileReader();
+    const map={
+        'إ':'ا','أ':'ا','آ':'ا',
+        'ى':'ي','ؤ':'و','ئ':'ي','ة':'ه'
+    };
 
-    if(fileType === "csv"){
-        reader.onload = function(event){
-            parseCSV(event.target.result);
-        };
+    text=text.replace(/[\u0617-\u061A\u064B-\u0652]/g,'');
+    text=text.replace(/[إأآىؤئة]/g, m=>map[m]);
+    text=text.replace(/\bال/g,'');
+    text=text.replace(/[^\w\s]/g,'');
+    return text.trim();
+}
+
+/ ===== رفع الملف ===== /
+document.getElementById("fileInput").addEventListener("change", e=>{
+    const file=e.target.files[0];
+    const reader=new FileReader();
+
+    if(file.name.endsWith(".csv")){
+        reader.onload=x=>loadCSV(x.target.result);
         reader.readAsText(file);
-    } else if(fileType === "xlsx"){
-        reader.onload = function(event){
-            const workbook = XLSX.read(event.target.result, {type:'binary'});
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(sheet, {header:1});
+    }else{
+        reader.onload=x=>{
+            const wb=XLSX.read(x.target.result,{type:'binary'});
+            const sheet=wb.Sheets[wb.SheetNames[0]];
+            const json=XLSX.utils.sheet_to_json(sheet,{header:1});
             loadData(json);
         };
         reader.readAsBinaryString(file);
     }
+
+    document.getElementById("fileInfo").innerText=
+        "اسم الملف: "+file.name;
 });
 
-function parseCSV(text){
-    const rows = text.split("\n").map(r => r.split(","));
+/ قراءة CSV /
+function loadCSV(text){
+    const rows=text.split("\n").map(r=>r.split(","));
     loadData(rows);
 }
 
 function loadData(rows){
-    headers = rows[0];
-    data = rows.slice(1).filter(r => r.length > 1);
+    headers=rows[0];
+    data=rows.slice(1).filter(r=>r.length>1);
 
-    updateColumnSelect();
+    updateColumns();
     renderTable(data);
 
-    document.getElementById("toolsSection").style.display = "block";
+    document.getElementById("tools").classList.remove("hidden");
+    document.getElementById("tableCard").classList.remove("hidden");
+    document.getElementById("fileInfo").innerText+=
+        " | عدد الصفوف: "+data.length;
 }
 
+/ الجدول /
 function renderTable(rows){
-    let html = "<table><tr>";
-    headers.forEach(h => html += "<th>"+h+"</th>");
-    html += "</tr>";
+    let html="<table><tr>";
+    headers.forEach(h=>html+="<th>"+h+"</th>");
+    html+="</tr>";
 
-    rows.forEach(row=>{
-        html += "<tr>";
+    rows.forEach(r=>{
+        html+="<tr>";
         headers.forEach((_,i)=>{
-            html += "<td>"+(row[i] || "")+"</td>";
+            html+="<td>"+(r[i]||"")+"</td>";
         });
-        html += "</tr>";
+        html+="</tr>";
     });
 
-    html += "</table>";
-    document.getElementById("tableContainer").innerHTML = html;
+    html+="</table>";
+    document.getElementById("tableContainer").innerHTML=html;
 }
 
-document.getElementById("searchInput").addEventListener("input", function(){
-    const value = this.value.toLowerCase();
-    const filtered = data.filter(row =>
-        row.some(cell => (cell || "").toString().toLowerCase().includes(value))
-    );
+/ البحث /
+document.getElementById("searchInput").addEventListener("input",function(){
+    const v=this.value.toLowerCase();
+    const filtered=data.filter(row=>row.some(c=>(c||"").toString().toLowerCase().includes(v)));
     renderTable(filtered);
 });
 
-function updateColumnSelect(){
-    const select = document.getElementById("columnSelect");
-    select.innerHTML="";
+/ الأعمدة /
+function updateColumns(){
+    const s=document.getElementById("columnSelect");
+    s.innerHTML="";
     headers.forEach((h,i)=>{
-        const option = document.createElement("option");
-        option.value=i;
-        option.text=h;
-        select.appendChild(option);
+        const o=document.createElement("option");
+        o.value=i;o.text=h;
+        s.appendChild(o);
     });
 }
 
+/ استبدال /
 function replaceValue(){
-    const col = document.getElementById("columnSelect").value;
-    const oldVal = document.getElementById("oldValue").value;
-    const newVal = document.getElementById("newValue").value;
+    const col=document.getElementById("columnSelect").value;
+    const oldv=document.getElementById("oldValue").value;
+    const newv=document.getElementById("newValue").value;
 
-    data = data.map(row=>{
-        if(row[col] === oldVal){
-            row[col] = newVal;
-        }
-        return row;
+    data=data.map(r=>{
+        if(r[col]==oldv) r[col]=newv;
+        return r;
     });
 
+    modified=true;
     renderTable(data);
-    document.getElementById("successMsg").innerText = "تم تنفيذ الاستبدال بنجاح ✔";
+    showDownload();
+    msg("تم الاستبدال بنجاح");
 }
 
-function downloadFile(){
-    let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
-    XLSX.writeFile(wb, "cleaned_data.xlsx");
+/ توحيد عربي /
+document.getElementById("normalizeBtn").onclick=function(){
+    const col=document.getElementById("columnSelect").value;
+
+    data=data.map(r=>{
+        r[col]=normalizeArabic(r[col]);
+        return r;
+    });
+
+    modified=true;
+    renderTable(data);
+    showDownload();
+    msg("تم توحيد النصوص العربية");
+};
+
+/ تحميل /
+function showDownload(){
+    document.getElementById("downloadBtn").classList.remove("hidden");
+}
+
+document.getElementById("downloadBtn").onclick=function(){
+    const ws=XLSX.utils.aoa_to_sheet([headers,...data]);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Cleaned");
+    XLSX.writeFile(wb,"cleaned_data.xlsx");
+};
+
+/ رسالة */
+function msg(t){
+    document.getElementById("msg").innerText=t;
 }
 </script>
 
