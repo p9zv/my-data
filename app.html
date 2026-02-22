@@ -2,86 +2,178 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>أداة تنظيف البيانات</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>أداة تنظيف البيانات العربية</title>
+
+<!-- منع أرشفة الصفحة (مهم حتى لا تنافس الصفحة الرئيسية في SEO) -->
+<meta name="robots" content="noindex, nofollow">
+
+<!-- مكتبة قراءة Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
 body{
+    margin:0;
+    font-family:Tahoma, Arial;
     background:#020617;
     color:#e5e7eb;
-    font-family:Arial;
-    text-align:center;
 }
-table{
-    border-collapse:collapse;
+
+.container{
+    max-width:1100px;
     margin:auto;
-    margin-top:20px;
-    max-width:95%;
+    padding:40px 20px;
 }
-th,td{
+
+h1{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.upload-box{
+    background:#0f172a;
+    padding:30px;
+    border-radius:16px;
+    text-align:center;
+    border:1px solid #1e293b;
+}
+
+input, select{
+    padding:10px;
+    border-radius:8px;
     border:1px solid #334155;
-    padding:8px 12px;
-}
-button{
-    margin:10px;
-    padding:10px 20px;
-    border:none;
-    border-radius:10px;
-    background:#2563eb;
+    background:#1e293b;
     color:white;
-    cursor:pointer;
-}
-input,select{
-    padding:6px;
     margin:5px;
 }
-.top{
-    margin-top:20px;
+
+button{
+    padding:10px 18px;
+    border-radius:10px;
+    border:none;
+    background:linear-gradient(90deg,#2563eb,#1d4ed8);
+    color:white;
+    cursor:pointer;
+    margin:5px;
+    font-weight:bold;
+    transition:.2s;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+.table-container{
+    margin-top:30px;
+    overflow:auto;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+}
+
+th,td{
+    border:1px solid #334155;
+    padding:8px;
+    text-align:center;
+}
+
+th{
+    background:#1e293b;
+}
+
+.features{
+    margin-top:30px;
+    background:#0f172a;
+    padding:20px;
+    border-radius:12px;
+    display:none;
+}
+
+.success{
+    color:#22c55e;
+    margin-top:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>📊 أداة تنظيف البيانات</h1>
+<div class="container">
 
-<div class="top">
-<input type="file" id="fileInput" accept=".csv">
-<br>
+<h1>📊 أداة تنظيف وتوحيد البيانات العربية</h1>
 
-<input type="text" id="searchInput" placeholder="بحث داخل الجدول">
-
-<br>
-
-<select id="columnSelect"></select>
-<input type="text" id="oldValue" placeholder="القيمة القديمة">
-<input type="text" id="newValue" placeholder="القيمة الجديدة">
-
-<br>
-<button onclick="replaceValue()">تنفيذ الاستبدال</button>
-<button onclick="downloadCSV()">⬇ تحميل الملف</button>
+<div class="upload-box">
+    <p>ارفع ملف CSV أو Excel لبدء التنظيف</p>
+    <input type="file" id="fileInput" accept=".csv,.xlsx">
 </div>
 
-<div id="tableContainer"></div>
+<div class="features" id="toolsSection">
+    <h3>أدوات التنظيف</h3>
+
+    <input type="text" id="searchInput" placeholder="بحث داخل الجدول">
+
+    <br>
+
+    <select id="columnSelect"></select>
+    <input type="text" id="oldValue" placeholder="القيمة القديمة">
+    <input type="text" id="newValue" placeholder="القيمة الجديدة">
+
+    <br>
+
+    <button onclick="replaceValue()">تنفيذ الاستبدال</button>
+    <button onclick="downloadFile()">⬇ تحميل الملف بعد التنظيف</button>
+
+    <div class="success" id="successMsg"></div>
+</div>
+
+<div class="table-container" id="tableContainer"></div>
+
+</div>
 
 <script>
 let data = [];
 let headers = [];
+let fileType = "";
 
 document.getElementById('fileInput').addEventListener('change', function(e){
     const file = e.target.files[0];
+    fileType = file.name.split('.').pop().toLowerCase();
+
     const reader = new FileReader();
 
-    reader.onload = function(event){
-        const text = event.target.result;
-        const rows = text.split("\n").map(r => r.split(","));
-        headers = rows[0];
-        data = rows.slice(1);
-        updateColumnSelect();
-        renderTable(data);
-    };
-
-    reader.readAsText(file);
+    if(fileType === "csv"){
+        reader.onload = function(event){
+            parseCSV(event.target.result);
+        };
+        reader.readAsText(file);
+    } else if(fileType === "xlsx"){
+        reader.onload = function(event){
+            const workbook = XLSX.read(event.target.result, {type:'binary'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet, {header:1});
+            loadData(json);
+        };
+        reader.readAsBinaryString(file);
+    }
 });
+
+function parseCSV(text){
+    const rows = text.split("\n").map(r => r.split(","));
+    loadData(rows);
+}
+
+function loadData(rows){
+    headers = rows[0];
+    data = rows.slice(1).filter(r => r.length > 1);
+
+    updateColumnSelect();
+    renderTable(data);
+
+    document.getElementById("toolsSection").style.display = "block";
+}
 
 function renderTable(rows){
     let html = "<table><tr>";
@@ -90,8 +182,8 @@ function renderTable(rows){
 
     rows.forEach(row=>{
         html += "<tr>";
-        row.forEach(cell=>{
-            html += "<td>"+cell+"</td>";
+        headers.forEach((_,i)=>{
+            html += "<td>"+(row[i] || "")+"</td>";
         });
         html += "</tr>";
     });
@@ -103,7 +195,7 @@ function renderTable(rows){
 document.getElementById("searchInput").addEventListener("input", function(){
     const value = this.value.toLowerCase();
     const filtered = data.filter(row =>
-        row.some(cell => cell.toLowerCase().includes(value))
+        row.some(cell => (cell || "").toString().toLowerCase().includes(value))
     );
     renderTable(filtered);
 });
@@ -132,21 +224,14 @@ function replaceValue(){
     });
 
     renderTable(data);
+    document.getElementById("successMsg").innerText = "تم تنفيذ الاستبدال بنجاح ✔";
 }
 
-function downloadCSV(){
-    let csv = headers.join(",")+"\n";
-    data.forEach(row=>{
-        csv += row.join(",")+"\n";
-    });
-
-    const blob = new Blob([csv], {type: "text/csv"});
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cleaned_data.csv";
-    a.click();
+function downloadFile(){
+    let ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cleaned Data");
+    XLSX.writeFile(wb, "cleaned_data.xlsx");
 }
 </script>
 
