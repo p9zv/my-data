@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>أداة تنظيف البيانات</title>
+
+<style>
+body{
+    background:#020617;
+    color:#e5e7eb;
+    font-family:Arial;
+    text-align:center;
+}
+table{
+    border-collapse:collapse;
+    margin:auto;
+    margin-top:20px;
+    max-width:95%;
+}
+th,td{
+    border:1px solid #334155;
+    padding:8px 12px;
+}
+button{
+    margin:10px;
+    padding:10px 20px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+input,select{
+    padding:6px;
+    margin:5px;
+}
+.top{
+    margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📊 أداة تنظيف البيانات</h1>
+
+<div class="top">
+<input type="file" id="fileInput" accept=".csv">
+<br>
+
+<input type="text" id="searchInput" placeholder="بحث داخل الجدول">
+
+<br>
+
+<select id="columnSelect"></select>
+<input type="text" id="oldValue" placeholder="القيمة القديمة">
+<input type="text" id="newValue" placeholder="القيمة الجديدة">
+
+<br>
+<button onclick="replaceValue()">تنفيذ الاستبدال</button>
+<button onclick="downloadCSV()">⬇ تحميل الملف</button>
+</div>
+
+<div id="tableContainer"></div>
+
+<script>
+let data = [];
+let headers = [];
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(event){
+        const text = event.target.result;
+        const rows = text.split("\n").map(r => r.split(","));
+        headers = rows[0];
+        data = rows.slice(1);
+        updateColumnSelect();
+        renderTable(data);
+    };
+
+    reader.readAsText(file);
+});
+
+function renderTable(rows){
+    let html = "<table><tr>";
+    headers.forEach(h => html += "<th>"+h+"</th>");
+    html += "</tr>";
+
+    rows.forEach(row=>{
+        html += "<tr>";
+        row.forEach(cell=>{
+            html += "<td>"+cell+"</td>";
+        });
+        html += "</tr>";
+    });
+
+    html += "</table>";
+    document.getElementById("tableContainer").innerHTML = html;
+}
+
+document.getElementById("searchInput").addEventListener("input", function(){
+    const value = this.value.toLowerCase();
+    const filtered = data.filter(row =>
+        row.some(cell => cell.toLowerCase().includes(value))
+    );
+    renderTable(filtered);
+});
+
+function updateColumnSelect(){
+    const select = document.getElementById("columnSelect");
+    select.innerHTML="";
+    headers.forEach((h,i)=>{
+        const option = document.createElement("option");
+        option.value=i;
+        option.text=h;
+        select.appendChild(option);
+    });
+}
+
+function replaceValue(){
+    const col = document.getElementById("columnSelect").value;
+    const oldVal = document.getElementById("oldValue").value;
+    const newVal = document.getElementById("newValue").value;
+
+    data = data.map(row=>{
+        if(row[col] === oldVal){
+            row[col] = newVal;
+        }
+        return row;
+    });
+
+    renderTable(data);
+}
+
+function downloadCSV(){
+    let csv = headers.join(",")+"\n";
+    data.forEach(row=>{
+        csv += row.join(",")+"\n";
+    });
+
+    const blob = new Blob([csv], {type: "text/csv"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cleaned_data.csv";
+    a.click();
+}
+</script>
+
+</body>
+</html>
